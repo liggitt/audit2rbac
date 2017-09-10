@@ -1,14 +1,14 @@
-.PHONY: default install build test quicktest fmt vet lint install-deps update-deps
+.PHONY: default install build test quicktest fmt vet lint install-deps update-deps clean
 
 default: fmt vet lint build quicktest
 
 run:
 	go run ./cmd/audit2rbac/audit2rbac.go
 
-install-deps:
+install-deps: glide.yaml glide.lock
 	glide install -v
 
-update-deps:
+update-deps: glide.yaml glide.lock
 	glide update -v
 
 install:
@@ -22,6 +22,10 @@ test:
 
 quicktest:
 	go test ./pkg/...
+
+clean:
+	rm -fr bin
+	rm -fr vendor
 
 # Capture output and force failure when there is non-empty output
 fmt:
