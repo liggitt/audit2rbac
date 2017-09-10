@@ -1,10 +1,19 @@
 package pkg
 
 import (
+	"fmt"
+	"io"
 	"sort"
 	"strings"
 
+	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apiserver/pkg/apis/audit"
+	auditv1alpha1 "k8s.io/apiserver/pkg/apis/audit/v1alpha1"
+	auditv1beta1 "k8s.io/apiserver/pkg/apis/audit/v1beta1"
 	"k8s.io/apiserver/pkg/authentication/serviceaccount"
 	"k8s.io/apiserver/pkg/authentication/user"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
@@ -107,4 +116,49 @@ func sortRequests(requests []authorizer.AttributesRecord) {
 
 		return false
 	})
+}
+
+var (
+	// Scheme knows about audit and rbac types
+	Scheme = runtime.NewScheme()
+	// Decoder knows how to decode audit and rbac objects
+	Decoder runtime.Decoder
+)
+
+func init() {
+	if err := rbacv1.AddToScheme(Scheme); err != nil {
+		panic(err)
+	}
+	if err := rbac.AddToScheme(Scheme); err != nil {
+		panic(err)
+	}
+
+	if err := auditv1beta1.AddToScheme(Scheme); err != nil {
+		panic(err)
+	}
+	if err := auditv1alpha1.AddToScheme(Scheme); err != nil {
+		panic(err)
+	}
+	if err := audit.AddToScheme(Scheme); err != nil {
+		panic(err)
+	}
+
+	Decoder = serializer.NewCodecFactory(Scheme).UniversalDecoder()
+}
+
+// Output writes the specified object to the specified writer in "yaml" or "json" format
+func Output(w io.Writer, obj runtime.Object, format string) error {
+	var s *json.Serializer
+	switch format {
+	case "json":
+		s = json.NewSerializer(json.DefaultMetaFactory, Scheme, Scheme, true)
+	case "yaml":
+		s = json.NewYAMLSerializer(json.DefaultMetaFactory, Scheme, Scheme)
+	default:
+		return fmt.Errorf("unknown format: %s", format)
+	}
+
+	codec := serializer.NewCodecFactory(Scheme).CodecForVersions(s, s, rbacv1.SchemeGroupVersion, rbacv1.SchemeGroupVersion)
+
+	return codec.Encode(obj, w)
 }

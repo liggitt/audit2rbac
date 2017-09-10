@@ -23,6 +23,9 @@ type GenerateOptions struct {
 	VerbExpansions                          map[string][]string
 	ExpandMultipleNamesToUnnamed            bool
 	ExpandMultipleNamespacesToClusterScoped bool
+
+	NamePrefix string
+	Labels     map[string]string
 }
 
 // DefaultGenerateOptions returns default generation options
@@ -36,6 +39,9 @@ func DefaultGenerateOptions() GenerateOptions {
 		},
 		ExpandMultipleNamesToUnnamed:            true,
 		ExpandMultipleNamespacesToClusterScoped: true,
+
+		NamePrefix: "audit2rbac",
+		Labels:     map[string]string{},
 	}
 }
 
@@ -76,9 +82,7 @@ func (g *Generator) Generate() *RBACObjects {
 
 	generatedAuthorizer := rbacauthorizer.New(g.generatedGetter, g.generatedGetter, g.generatedGetter, g.generatedGetter)
 
-	/*
-		TODO: sort requests
-	*/
+	// sort requests to put broader ones first
 	sortRequests(g.requests)
 
 	for _, request := range g.requests {
@@ -100,7 +104,7 @@ func (g *Generator) Generate() *RBACObjects {
 		requestCopy.Namespace = ""
 
 		if (request.Namespace != "" && g.Options.ExpandMultipleNamespacesToClusterScoped) || (request.Name != "" && g.Options.ExpandMultipleNamesToUnnamed) {
-			// TODO: search remaining requests for requests with the same verb/group/resource/subresource that differ only by name/namespace
+			// search for other requests with the same verb/group/resource/subresource that differ only by name/namespace
 			for _, a := range g.requests {
 				differentNamespace := a.Namespace != "" && a.Namespace != request.Namespace
 				differentName := a.Name != "" && a.Name != request.Name
@@ -143,10 +147,10 @@ func (g *Generator) ensureClusterRoleAndBinding(subject rbac.Subject) *rbac.Clus
 	}
 
 	g.clusterRole = &rbac.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
+		ObjectMeta: metav1.ObjectMeta{Name: g.Options.NamePrefix, Labels: g.Options.Labels},
 	}
 	g.clusterRoleBinding = &rbac.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
+		ObjectMeta: metav1.ObjectMeta{Name: g.Options.NamePrefix, Labels: g.Options.Labels},
 		RoleRef:    rbac.RoleRef{APIGroup: rbac.GroupName, Kind: "ClusterRole", Name: g.clusterRole.Name},
 		Subjects:   []rbac.Subject{subject},
 	}
@@ -166,10 +170,10 @@ func (g *Generator) ensureNamespacedRoleAndBinding(subject rbac.Subject, namespa
 	}
 
 	g.namespacedRole[namespace] = &rbac.Role{
-		ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac-" + namespace, Namespace: namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: g.Options.NamePrefix, Namespace: namespace, Labels: g.Options.Labels},
 	}
 	g.namespacedRoleBinding[namespace] = &rbac.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac-" + namespace, Namespace: namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: g.Options.NamePrefix, Namespace: namespace, Labels: g.Options.Labels},
 		RoleRef:    rbac.RoleRef{APIGroup: rbac.GroupName, Kind: "Role", Name: g.namespacedRole[namespace].Name},
 		Subjects:   []rbac.Subject{subject},
 	}

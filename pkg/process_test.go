@@ -1,14 +1,11 @@
 package pkg
 
 import (
-	"bytes"
+	"fmt"
+	"os"
 	"testing"
 
-	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apiserver/pkg/authentication/user"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
 	rbacinternal "k8s.io/kubernetes/pkg/apis/rbac"
@@ -85,33 +82,20 @@ func TestProcess(t *testing.T) {
 	generator := NewGenerator(existing, requests, DefaultGenerateOptions())
 	generated := generator.Generate()
 
-	scheme := runtime.NewScheme()
-	if err := rbacv1.AddToScheme(scheme); err != nil {
-		t.Fatal(err)
-	}
-	if err := rbacinternal.AddToScheme(scheme); err != nil {
-		t.Fatal(err)
-	}
-
-	yaml := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme, scheme)
-	// yaml := json.NewSerializer(json.DefaultMetaFactory, scheme, scheme, true)
-
-	codec := serializer.NewCodecFactory(scheme).CodecForVersions(yaml, yaml, rbacv1.SchemeGroupVersion, rbacv1.SchemeGroupVersion)
-	output := func(obj runtime.Object) {
-		b := &bytes.Buffer{}
-		codec.Encode(obj, b)
-		t.Log("\n" + b.String())
-	}
 	for _, obj := range generated.ClusterRoles {
-		output(obj)
+		Output(os.Stdout, obj, "yaml")
+		fmt.Println()
 	}
 	for _, obj := range generated.ClusterRoleBindings {
-		output(obj)
+		Output(os.Stdout, obj, "yaml")
+		fmt.Println()
 	}
 	for _, obj := range generated.Roles {
-		output(obj)
+		Output(os.Stdout, obj, "yaml")
+		fmt.Println()
 	}
 	for _, obj := range generated.RoleBindings {
-		output(obj)
+		Output(os.Stdout, obj, "yaml")
+		fmt.Println()
 	}
 }
