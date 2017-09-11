@@ -48,10 +48,12 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 		Stderr: stderr,
 	}
 
+	serviceAccount := ""
+
 	showVersion := false
 
 	cmd := &cobra.Command{
-		Use:   "audit2rbac --filename=audit.log --user=bob",
+		Use:   "audit2rbac --filename=audit.log [ --user=bob | --serviceaccount=my-namespace:my-sa ]",
 		Short: "",
 		Long:  "",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -60,7 +62,7 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 				return
 			}
 
-			checkErr(stderr, options.Complete(args))
+			checkErr(stderr, options.Complete(serviceAccount, args))
 
 			if err := options.Validate(); err != nil {
 				fmt.Fprintln(stderr, err)
@@ -74,7 +76,8 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 	}
 
 	cmd.Flags().StringArrayVarP(&options.AuditSources, "filename", "f", options.AuditSources, "File, URL, or - for STDIN to read audit events from")
-	cmd.Flags().StringVarP(&options.User, "user", "u", options.User, "User to filter audit events to and generate role bindings for")
+	cmd.Flags().StringVar(&options.User, "user", options.User, "User to filter audit events to and generate role bindings for")
+	cmd.Flags().StringVar(&serviceAccount, "serviceaccount", serviceAccount, "Service account to filter audit events to and generate role bindings for, in format <namespace>:<name>")
 	cmd.Flags().BoolVar(&showVersion, "version", false, "Display version")
 
 	return cmd
@@ -103,7 +106,18 @@ type Audit2RBACOptions struct {
 	Stderr io.Writer
 }
 
-func (a *Audit2RBACOptions) Complete(args []string) error {
+func (a *Audit2RBACOptions) Complete(serviceAccount string, args []string) error {
+	if len(serviceAccount) > 0 && len(a.User) > 0 {
+		return fmt.Errorf("cannot set both user and service account")
+	}
+	if len(serviceAccount) > 0 {
+		parts := strings.Split(serviceAccount, ":")
+		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+			return fmt.Errorf("service account must be in the format <namespace>:<name>")
+		}
+		a.User = serviceaccount.MakeUsername(parts[0], parts[1])
+	}
+
 	if len(a.GeneratedLabels) == 0 {
 		a.GeneratedLabels["audit2rbac.liggitt.net/user"] = sanitizeLabel(a.User)
 		a.GeneratedLabels["audit2rbac.liggitt.net/generated"] = "true"
