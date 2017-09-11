@@ -4,7 +4,7 @@
 
 audit2rbac takes a [Kubernetes audit log](https://kubernetes.io/docs/tasks/debug-application-cluster/audit/) and username as input, and generates [RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) role and binding objects that cover all the API requests made by that user.
 
-audit2rbac is in the nascent stages of development, has [known issues](#known-issues), and will change internal and external interfaces before a stable release.
+audit2rbac is in the nascent stages of development, has [known issues](https://github.com/liggitt/audit2rbac/issues?q=is%3Aissue+is%3Aopen+label%3Abug), and will change internal and external interfaces before a stable release.
 
 ## User Instructions
 
@@ -63,17 +63,3 @@ cd $GOPATH/src/github.com/liggitt/audit2rbac
 make install-deps
 make
 ```
-
-## Known issues
-
-* Audit events for objects outside the core API group (API group `""`) are not parsed correctly. This will be resolved once the https://github.com/kubernetes/apiserver repository has the latest 1.8 audit types pushed to it.
-
-## Roadmap
-
-* Allow customizing the name and labels of generated objects
-* Allow specifying a file/folder to output generated objects to
-* Allow customizing verb expansion strategies ("if the user does an update, also allow patch", etc)
-* Allow customizing name/namespace expansion strategies ("if the user does the same operation in two namespaces, grant it cluster-wide", etc)
-* Generate intermediate results while processing a large (or streaming) audit log
-* Allow specifying existing roles/bindings as input, and only generate roles for permissions missing from existing roles
-* Allow alternate input/output methods (acting as an audit webhook, surfacing a web UI, etc)

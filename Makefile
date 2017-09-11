@@ -1,4 +1,4 @@
-.PHONY: default install build test quicktest fmt vet lint install-deps update-deps clean
+.PHONY: default install build build-cross clean test quicktest fmt vet lint install-deps update-deps clean-deps
 
 default: fmt vet lint build quicktest
 
@@ -11,21 +11,26 @@ install-deps: glide.yaml glide.lock
 update-deps: glide.yaml glide.lock
 	glide update -v
 
-install:
-	go install ./cmd/audit2rbac
+clean-deps:
+	rm -fr vendor
 
 build:
-	go build -o bin/audit2rbac ./cmd/audit2rbac
+	go build -o bin/audit2rbac $(shell ./build/print-ldflags.sh) ./cmd/audit2rbac
+
+build-cross:
+	./build/build-cross.sh cmd/audit2rbac/audit2rbac.go
+
+install:
+	go install $(shell ./build/print-ldflags.sh) ./cmd/audit2rbac
+
+clean:
+	rm -fr bin
 
 test:
 	go test -v -race -cover ./pkg/...
 
 quicktest:
 	go test ./pkg/...
-
-clean:
-	rm -fr bin
-	rm -fr vendor
 
 # Capture output and force failure when there is non-empty output
 fmt:

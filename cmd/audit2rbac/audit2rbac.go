@@ -46,11 +46,18 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 		Stderr: stderr,
 	}
 
+	showVersion := false
+
 	cmd := &cobra.Command{
 		Use:   "audit2rbac --filename=audit.log --user=bob",
 		Short: "",
 		Long:  "",
 		Run: func(cmd *cobra.Command, args []string) {
+			if showVersion {
+				fmt.Fprintln(stdout, "audit2rbac version "+pkg.Version)
+				return
+			}
+
 			checkErr(stderr, options.Complete(args))
 
 			if err := options.Validate(); err != nil {
@@ -66,6 +73,7 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 
 	cmd.Flags().StringArrayVarP(&options.AuditSources, "filename", "f", options.AuditSources, "File, URL, or - for STDIN to read audit events from")
 	cmd.Flags().StringVarP(&options.User, "user", "u", options.User, "User to filter audit events to and generate role bindings for")
+	cmd.Flags().BoolVar(&showVersion, "version", false, "Display version")
 
 	return cmd
 }
