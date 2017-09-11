@@ -1,13 +1,27 @@
 package: github.com/liggitt/audit2rbac
 import:
+- package: github.com/spf13/cobra
+  version: f62e98d28ab7ad31d707ba837a966378465c7b57
+- package: k8s.io/api
+  subpackages:
+  - rbac/v1
 - package: k8s.io/apimachinery
   version: b166f81f5c4c88402ae23a0d0944c6ad08bffd3b
   subpackages:
   - pkg/apis/meta/v1
+  - pkg/apis/meta/v1/unstructured
+  - pkg/conversion/unstructured
+  - pkg/runtime
+  - pkg/runtime/serializer
+  - pkg/runtime/serializer/json
   - pkg/util/sets
+  - pkg/util/yaml
 - package: k8s.io/apiserver
   version: b2a8ad67a002d27c8945573abb80b4be543f2a1f
   subpackages:
+  - pkg/apis/audit
+  - pkg/apis/audit/v1alpha1
+  - pkg/apis/audit/v1beta1
   - pkg/authentication/serviceaccount
   - pkg/authentication/user
   - pkg/authorization/authorizer
@@ -17,8 +31,3 @@ import:
   - pkg/apis/rbac
   - pkg/registry/rbac/validation
   - plugin/pkg/auth/authorizer/rbac
-testImport:
-- package: k8s.io/api
-  version: f30e293246921de7f4ee46bb65b8762b2f890fc4
-  subpackages:
-  - rbac/v1

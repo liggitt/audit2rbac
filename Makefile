@@ -5,11 +5,11 @@ default: fmt vet lint build quicktest
 run:
 	go run ./cmd/audit2rbac/audit2rbac.go
 
-install-deps: glide.yaml glide.lock
+install-deps:
 	glide install -v
 	build/update-vendor-notices.sh
 
-update-deps: glide.yaml glide.lock
+update-deps:
 	glide update -v
 	build/update-vendor-notices.sh
 
