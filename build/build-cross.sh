@@ -79,19 +79,21 @@ for PLATFORM in $PLATFORMS; do
   if [[ "${GOARCH}" == "arm" ]]; then GOARM=7; fi
 
   BIN_DIR="bin/${GOOS}/${GOARCH}"
-  BIN_FILENAME="${BIN_DIR}/${OUTPUT}"
+  BIN_FILENAME="${OUTPUT}"
   TAR_FILENAME="bin/${OUTPUT}-${GOOS}-${GOARCH}.tar.gz"
   if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
 
   mkdir -p "${BIN_DIR}"
-  rm -f "${BIN_FILENAME}"
+  rm -f "${BIN_DIR}/${BIN_FILENAME}"
   rm -f "${TAR_FILENAME}"
 
-  CMD="GOARM=${GOARM} GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${BIN_FILENAME} $($(dirname "${BASH_SOURCE}")/print-ldflags.sh) $@"
+  CMD="GOARM=${GOARM} GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${BIN_DIR}/${BIN_FILENAME} $($(dirname "${BASH_SOURCE}")/print-ldflags.sh) $@"
 
   echo "${CMD}"
   eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
-  tar -czf "${TAR_FILENAME}" "${BIN_FILENAME}"
+  pushd $BIN_DIR
+    tar -czf "../../../${TAR_FILENAME}" "${BIN_FILENAME}"
+  popd
 done
 
 # eval errors
