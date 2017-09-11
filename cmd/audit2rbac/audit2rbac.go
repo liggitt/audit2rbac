@@ -465,8 +465,7 @@ func eventToAttributes(event *audit.Event) authorizer.AttributesRecord {
 		attrs.Name = event.ObjectRef.Name
 		attrs.Resource = event.ObjectRef.Resource
 		attrs.Subresource = event.ObjectRef.Subresource
-		// TODO: fix when newer version of apiserver repo is pushed
-		// attrs.APIGroup=event.ObjectRef.APIGroup
+		attrs.APIGroup = event.ObjectRef.APIGroup
 		attrs.APIVersion = event.ObjectRef.APIVersion
 	}
 
