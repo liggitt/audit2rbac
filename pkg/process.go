@@ -102,14 +102,19 @@ func (g *Generator) Generate() *RBACObjects {
 		requestCopy := request
 		requestCopy.Name = ""
 		requestCopy.Namespace = ""
+		requestCopy.Path = ""
 
 		if (request.Namespace != "" && g.Options.ExpandMultipleNamespacesToClusterScoped) || (request.Name != "" && g.Options.ExpandMultipleNamesToUnnamed) {
 			// search for other requests with the same verb/group/resource/subresource that differ only by name/namespace
 			for _, a := range g.requests {
 				differentNamespace := a.Namespace != "" && a.Namespace != request.Namespace
 				differentName := a.Name != "" && a.Name != request.Name
+				if !a.ResourceRequest {
+					continue
+				}
 				a.Name = ""
 				a.Namespace = ""
+				a.Path = ""
 				if reflect.DeepEqual(requestCopy, a) {
 					if g.Options.ExpandMultipleNamespacesToClusterScoped && differentNamespace {
 						request.Namespace = ""
