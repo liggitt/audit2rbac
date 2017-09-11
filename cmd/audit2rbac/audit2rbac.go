@@ -15,6 +15,7 @@ import (
 	"github.com/liggitt/audit2rbac/pkg"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	unstructuredconversion "k8s.io/apimachinery/pkg/conversion/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -23,6 +24,7 @@ import (
 	"k8s.io/apiserver/pkg/authentication/serviceaccount"
 	"k8s.io/apiserver/pkg/authentication/user"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
+	rbacinternal "k8s.io/kubernetes/pkg/apis/rbac"
 )
 
 func main() {
@@ -183,7 +185,7 @@ func (a *Audit2RBACOptions) Run() error {
 	opts.Labels = a.GeneratedLabels
 	opts.NamePrefix = a.GeneratedNamePrefix
 
-	generated := pkg.NewGenerator(pkg.RBACObjects{}, attributes, opts).Generate()
+	generated := pkg.NewGenerator(getDiscoveryRoles(), attributes, opts).Generate()
 
 	fmt.Fprintln(a.Stderr, "Generating roles...")
 
@@ -470,4 +472,27 @@ func eventToAttributes(event *audit.Event) authorizer.AttributesRecord {
 	}
 
 	return attrs
+}
+
+func getDiscoveryRoles() pkg.RBACObjects {
+	return pkg.RBACObjects{
+		ClusterRoles: []*rbacinternal.ClusterRole{
+			&rbacinternal.ClusterRole{
+				ObjectMeta: metav1.ObjectMeta{Name: "system:discovery"},
+				Rules: []rbacinternal.PolicyRule{
+					rbacinternal.NewRule("get").URLs("/healthz", "/version", "/swagger*", "/api*").RuleOrDie(),
+				},
+			},
+		},
+		ClusterRoleBindings: []*rbacinternal.ClusterRoleBinding{
+			&rbacinternal.ClusterRoleBinding{
+				ObjectMeta: metav1.ObjectMeta{Name: "system:discovery"},
+				Subjects: []rbacinternal.Subject{
+					{Kind: rbacinternal.GroupKind, APIGroup: rbacinternal.GroupName, Name: "system:authenticated"},
+					{Kind: rbacinternal.GroupKind, APIGroup: rbacinternal.GroupName, Name: "system:unauthenticated"},
+				},
+				RoleRef: rbacinternal.RoleRef{APIGroup: rbacinternal.GroupName, Kind: "ClusterRole", Name: "system:discovery"},
+			},
+		},
+	}
 }
