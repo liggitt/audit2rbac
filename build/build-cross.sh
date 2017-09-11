@@ -80,14 +80,18 @@ for PLATFORM in $PLATFORMS; do
 
   BIN_DIR="bin/${GOOS}/${GOARCH}"
   BIN_FILENAME="${BIN_DIR}/${OUTPUT}"
+  TAR_FILENAME="bin/${OUTPUT}-${GOOS}-${GOARCH}.tar.gz"
   if [[ "${GOOS}" == "windows" ]]; then BIN_FILENAME="${BIN_FILENAME}.exe"; fi
 
   mkdir -p "${BIN_DIR}"
+  rm -f "${BIN_FILENAME}"
+  rm -f "${TAR_FILENAME}"
 
   CMD="GOARM=${GOARM} GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${BIN_FILENAME} $($(dirname "${BASH_SOURCE}")/print-ldflags.sh) $@"
 
   echo "${CMD}"
   eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
+  tar -czf "${TAR_FILENAME}" "${BIN_FILENAME}"
 done
 
 # eval errors
@@ -96,3 +100,5 @@ if [[ "${FAILURES}" != "" ]]; then
   echo "${SCRIPT_NAME} failed on: ${FAILURES}"
   exit 1
 fi
+
+$(dirname "${BASH_SOURCE}")/print-shasum.sh
