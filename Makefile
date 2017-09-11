@@ -7,9 +7,11 @@ run:
 
 install-deps: glide.yaml glide.lock
 	glide install -v
+	build/update-vendor-notices.sh
 
 update-deps: glide.yaml glide.lock
 	glide update -v
+	build/update-vendor-notices.sh
 
 clean-deps:
 	rm -fr vendor

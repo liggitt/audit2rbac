@@ -60,6 +60,7 @@ To download, install dependencies, and build:
 ```sh
 go get -d github.com/liggitt/audit2rbac
 cd $GOPATH/src/github.com/liggitt/audit2rbac
+git fetch --tags
 make install-deps
 make
 ```
