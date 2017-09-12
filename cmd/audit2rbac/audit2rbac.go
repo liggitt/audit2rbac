@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -80,6 +81,7 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 	cmd.Flags().StringArrayVarP(&options.AuditSources, "filename", "f", options.AuditSources, "File, URL, or - for STDIN to read audit events from")
 	cmd.Flags().StringVar(&options.User, "user", options.User, "User to filter audit events to and generate role bindings for")
 	cmd.Flags().StringVar(&serviceAccount, "serviceaccount", serviceAccount, "Service account to filter audit events to and generate role bindings for, in format <namespace>:<name>")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", options.Namespace, "Namespace to filter audit events to")
 	cmd.Flags().BoolVar(&showVersion, "version", false, "Display version")
 
 	return cmd
@@ -96,6 +98,9 @@ type Audit2RBACOptions struct {
 
 	// User to filter audit events to and generate roles for
 	User string
+
+	// Namespace limits the audit events considered to the specified namespace
+	Namespace string
 
 	// Directory to write generated roles to. Defaults to current directory.
 	GeneratedPath string
@@ -181,7 +186,18 @@ func (a *Audit2RBACOptions) Run() error {
 	results = flatten(results)
 	results = typecast(results, pkg.Scheme)
 	results = convertinternal(results, pkg.Scheme)
-	results = filterEvents(results, a.User)
+	results = filterEvents(results,
+		func(event *audit.Event) bool {
+			eventUser := &event.User
+			if event.ImpersonatedUser != nil {
+				eventUser = event.ImpersonatedUser
+			}
+			return eventUser.Username == a.User
+		},
+		func(event *audit.Event) bool {
+			return a.Namespace == "" || (event.ObjectRef != nil && a.Namespace == event.ObjectRef.Namespace)
+		},
+	)
 
 	// TODO: allow generating intermediate results before completing stream (every X events, or every X seconds, etc)
 	// This allows piping the audit log through audit2rbac
@@ -200,12 +216,16 @@ func (a *Audit2RBACOptions) Run() error {
 			fmt.Fprintf(a.Stderr, ".")
 		}
 	}
+	fmt.Fprintln(a.Stderr)
 
 	if len(attributes) == 0 {
-		return fmt.Errorf("No audit events matched user %s", a.User)
+		message := fmt.Sprintf("No audit events matched user %s", a.User)
+		if len(a.Namespace) > 0 {
+			message += fmt.Sprintf(" in namespace %s", a.Namespace)
+		}
+		return errors.New(message)
 	}
 
-	fmt.Fprintln(a.Stderr)
 	fmt.Fprintln(a.Stderr, "Evaluating API calls...")
 
 	opts := pkg.DefaultGenerateOptions()
@@ -450,7 +470,7 @@ func convertinternal(in <-chan *streamObject, convertor runtime.ObjectConvertor)
 	return out
 }
 
-func filterEvents(in <-chan *streamObject, user string) <-chan *streamObject {
+func filterEvents(in <-chan *streamObject, filters ...func(*audit.Event) bool) <-chan *streamObject {
 	out := make(chan *streamObject)
 
 	go func() {
@@ -467,15 +487,17 @@ func filterEvents(in <-chan *streamObject, user string) <-chan *streamObject {
 				continue
 			}
 
-			eventUser := &event.User
-			if event.ImpersonatedUser != nil {
-				eventUser = event.ImpersonatedUser
-			}
-			if eventUser.Username != user {
-				continue
+			include := true
+			for _, filter := range filters {
+				include = filter(event)
+				if !include {
+					break
+				}
 			}
 
-			out <- result
+			if include {
+				out <- result
+			}
 		}
 	}()
 
