@@ -6,7 +6,7 @@ audit2rbac takes a [Kubernetes audit log](https://kubernetes.io/docs/tasks/debug
 
 audit2rbac is in the nascent stages of development, and will change internal and external interfaces before a stable release.
 
-* [Release history](CHANGELOG.md)
+* [Releases](https://github.com/liggitt/audit2rbac/releases)
 * [Known issues](https://github.com/liggitt/audit2rbac/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
 
 ## User Instructions
