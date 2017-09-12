@@ -91,9 +91,9 @@ for PLATFORM in $PLATFORMS; do
 
   echo "${CMD}"
   eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
-  pushd $BIN_DIR
+  pushd $BIN_DIR > /dev/null
     tar -czf "../../../${TAR_FILENAME}" "${BIN_FILENAME}"
-  popd
+  popd > /dev/null
 done
 
 # eval errors
