@@ -164,6 +164,12 @@ func (a *Audit2RBACOptions) Validate() error {
 func (a *Audit2RBACOptions) Run() error {
 	hasErrors := false
 
+	if len(a.AuditSources) == 1 {
+		fmt.Fprintln(a.Stderr, "Opening audit source...")
+	} else {
+		fmt.Fprintln(a.Stderr, "Opening audit sources...")
+	}
+
 	streams, streamErrors := openStreams(a.AuditSources)
 	for _, err := range streamErrors {
 		hasErrors = true
