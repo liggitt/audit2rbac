@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	goruntime "runtime"
 	"strings"
 	"sync"
 
@@ -250,7 +251,15 @@ func openStreams(sources []string) ([]io.ReadCloser, []error) {
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 	for _, source := range sources {
 		if strings.HasPrefix(source, "http://") || strings.HasPrefix(source, "https://") {
-			resp, err := client.Get(source)
+			req, err := http.NewRequest("GET", source, nil)
+			if err != nil {
+				errors = append(errors, err)
+				continue
+			}
+
+			req.Header.Set("User-Agent", "audit2rbac/"+pkg.Version+" "+goruntime.GOOS+"/"+goruntime.GOARCH)
+
+			resp, err := client.Do(req)
 			if err != nil {
 				errors = append(errors, err)
 			} else if resp.StatusCode != http.StatusOK {
