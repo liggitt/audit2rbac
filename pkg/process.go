@@ -24,8 +24,9 @@ type GenerateOptions struct {
 	ExpandMultipleNamesToUnnamed            bool
 	ExpandMultipleNamespacesToClusterScoped bool
 
-	NamePrefix string
-	Labels     map[string]string
+	NamePrefix  string
+	Labels      map[string]string
+	Annotations map[string]string
 }
 
 // DefaultGenerateOptions returns default generation options
@@ -40,8 +41,9 @@ func DefaultGenerateOptions() GenerateOptions {
 		ExpandMultipleNamesToUnnamed:            true,
 		ExpandMultipleNamespacesToClusterScoped: true,
 
-		NamePrefix: "audit2rbac",
-		Labels:     map[string]string{},
+		NamePrefix:  "audit2rbac",
+		Labels:      map[string]string{},
+		Annotations: map[string]string{},
 	}
 }
 
@@ -152,10 +154,10 @@ func (g *Generator) ensureClusterRoleAndBinding(subject rbac.Subject) *rbac.Clus
 	}
 
 	g.clusterRole = &rbac.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{Name: g.Options.NamePrefix, Labels: g.Options.Labels},
+		ObjectMeta: metav1.ObjectMeta{Name: g.Options.NamePrefix, Labels: g.Options.Labels, Annotations: g.Options.Annotations},
 	}
 	g.clusterRoleBinding = &rbac.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{Name: g.Options.NamePrefix, Labels: g.Options.Labels},
+		ObjectMeta: metav1.ObjectMeta{Name: g.Options.NamePrefix, Labels: g.Options.Labels, Annotations: g.Options.Annotations},
 		RoleRef:    rbac.RoleRef{APIGroup: rbac.GroupName, Kind: "ClusterRole", Name: g.clusterRole.Name},
 		Subjects:   []rbac.Subject{subject},
 	}
@@ -175,10 +177,10 @@ func (g *Generator) ensureNamespacedRoleAndBinding(subject rbac.Subject, namespa
 	}
 
 	g.namespacedRole[namespace] = &rbac.Role{
-		ObjectMeta: metav1.ObjectMeta{Name: g.Options.NamePrefix, Namespace: namespace, Labels: g.Options.Labels},
+		ObjectMeta: metav1.ObjectMeta{Name: g.Options.NamePrefix, Namespace: namespace, Labels: g.Options.Labels, Annotations: g.Options.Annotations},
 	}
 	g.namespacedRoleBinding[namespace] = &rbac.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{Name: g.Options.NamePrefix, Namespace: namespace, Labels: g.Options.Labels},
+		ObjectMeta: metav1.ObjectMeta{Name: g.Options.NamePrefix, Namespace: namespace, Labels: g.Options.Labels, Annotations: g.Options.Annotations},
 		RoleRef:    rbac.RoleRef{APIGroup: rbac.GroupName, Kind: "Role", Name: g.namespacedRole[namespace].Name},
 		Subjects:   []rbac.Subject{subject},
 	}

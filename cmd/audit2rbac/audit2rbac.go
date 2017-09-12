@@ -41,9 +41,10 @@ func checkErr(w io.Writer, err error) {
 
 func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 	options := &Audit2RBACOptions{
-		GeneratedPath:       ".",
-		GeneratedNamePrefix: "",
-		GeneratedLabels:     map[string]string{},
+		GeneratedPath:        ".",
+		GeneratedNamePrefix:  "",
+		GeneratedLabels:      map[string]string{},
+		GeneratedAnnotations: map[string]string{},
 
 		Stdout: stdout,
 		Stderr: stderr,
@@ -100,8 +101,10 @@ type Audit2RBACOptions struct {
 	GeneratedPath string
 	// Prefix for generated object names. Defaults to "audit2rbac:<user>"
 	GeneratedNamePrefix string
-	// Labels to apply to generated object names. Defaults to audit2rbac.liggitt.net/generated=true
+	// Labels to apply to generated object names.
 	GeneratedLabels map[string]string
+	// Annotations to apply to generated object names.
+	GeneratedAnnotations map[string]string
 
 	Stdout io.Writer
 	Stderr io.Writer
@@ -122,6 +125,9 @@ func (a *Audit2RBACOptions) Complete(serviceAccount string, args []string) error
 	if len(a.GeneratedLabels) == 0 {
 		a.GeneratedLabels["audit2rbac.liggitt.net/user"] = sanitizeLabel(a.User)
 		a.GeneratedLabels["audit2rbac.liggitt.net/generated"] = "true"
+	}
+	if len(a.GeneratedAnnotations) == 0 {
+		a.GeneratedAnnotations["audit2rbac.liggitt.net/version"] = pkg.Version
 	}
 
 	if len(a.GeneratedNamePrefix) == 0 {
@@ -198,6 +204,7 @@ func (a *Audit2RBACOptions) Run() error {
 
 	opts := pkg.DefaultGenerateOptions()
 	opts.Labels = a.GeneratedLabels
+	opts.Annotations = a.GeneratedAnnotations
 	opts.NamePrefix = a.GeneratedNamePrefix
 
 	generated := pkg.NewGenerator(getDiscoveryRoles(), attributes, opts).Generate()
