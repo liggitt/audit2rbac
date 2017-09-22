@@ -1,15 +1,10 @@
 package: github.com/liggitt/audit2rbac
 import:
 - package: github.com/spf13/cobra
-  version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - package: k8s.io/api
-  repo: git@github.com:sttts/api.git
-  version: release-1.8
   subpackages:
   - rbac/v1
 - package: k8s.io/apimachinery
-  repo: git@github.com:sttts/apimachinery.git
-  version: release-1.8
   subpackages:
   - pkg/apis/meta/v1
   - pkg/apis/meta/v1/unstructured
@@ -20,8 +15,6 @@ import:
   - pkg/util/sets
   - pkg/util/yaml
 - package: k8s.io/apiserver
-  repo: git@github.com:sttts/apiserver.git
-  version: release-1.8
   subpackages:
   - pkg/apis/audit
   - pkg/apis/audit/v1alpha1
@@ -35,6 +28,3 @@ import:
   - pkg/apis/rbac
   - pkg/registry/rbac/validation
   - plugin/pkg/auth/authorizer/rbac
-- package: k8s.io/client-go
-  version: release-5.0
-  repo: git@github.com:sttts/client-go.git

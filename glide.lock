@@ -1,5 +1,5 @@
-hash: 16d82bba017dca58a5d8a0af9e9473bbce5c0fba57a365a3190237f421840a4e
-updated: 2017-09-11T10:47:14.297849065-04:00
+hash: 3355a37dfbe9d9e31344fcd4f9585345dcd1191b0d38d63d632fe769e8ea1e38
+updated: 2017-09-22T14:53:51.391387464-04:00
 imports:
 - name: github.com/davecgh/go-spew
   version: 782f4967f2dc4564575ca782fe2d04090b5faca8
@@ -90,8 +90,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/api
-  version: ae6d7b98bf6dde1a9c122cd843c3347b3d2353f2
-  repo: git@github.com:sttts/api.git
+  version: fe29995db37613b9c5b2a647544cf627bfa8d299
   subpackages:
   - admissionregistration/v1alpha1
   - apps/v1beta1
@@ -118,8 +117,7 @@ imports:
   - storage/v1
   - storage/v1beta1
 - name: k8s.io/apimachinery
-  version: 435dce4ef7f79db3e4fb35d8f5915569fa471eb2
-  repo: git@github.com:sttts/apimachinery.git
+  version: 9d38e20d609d27e00d4ec18f7b9db67105a2bde0
   subpackages:
   - pkg/api/equality
   - pkg/api/errors
@@ -164,8 +162,7 @@ imports:
   - pkg/watch
   - third_party/forked/golang/reflect
 - name: k8s.io/apiserver
-  version: 4b199ad700532d4f32f34d58cfdab49dcf65861f
-  repo: git@github.com:sttts/apiserver.git
+  version: f9b476d61dbdf6474e3d42cc5e854d0d8b7f759e
   subpackages:
   - pkg/apis/audit
   - pkg/apis/audit/v1alpha1
@@ -175,27 +172,140 @@ imports:
   - pkg/authorization/authorizer
   - pkg/endpoints/request
 - name: k8s.io/client-go
-  version: a65a4c3071022fb71cb1830b6f2420c687cc8571
-  repo: git@github.com:sttts/client-go.git
+  version: afb4606c45bae77c4dc2c15291d4d7d6d792196c
   subpackages:
+  - discovery
+  - discovery/fake
+  - informers
+  - informers/admissionregistration
+  - informers/admissionregistration/v1alpha1
+  - informers/apps
+  - informers/apps/v1beta1
+  - informers/apps/v1beta2
+  - informers/autoscaling
+  - informers/autoscaling/v1
+  - informers/autoscaling/v2beta1
+  - informers/batch
+  - informers/batch/v1
+  - informers/batch/v1beta1
+  - informers/batch/v2alpha1
+  - informers/certificates
+  - informers/certificates/v1beta1
+  - informers/core
+  - informers/core/v1
+  - informers/extensions
+  - informers/extensions/v1beta1
+  - informers/internalinterfaces
+  - informers/networking
+  - informers/networking/v1
+  - informers/policy
+  - informers/policy/v1beta1
+  - informers/rbac
+  - informers/rbac/v1
+  - informers/rbac/v1alpha1
+  - informers/rbac/v1beta1
+  - informers/scheduling
+  - informers/scheduling/v1alpha1
+  - informers/settings
+  - informers/settings/v1alpha1
+  - informers/storage
+  - informers/storage/v1
+  - informers/storage/v1beta1
+  - kubernetes
+  - kubernetes/fake
   - kubernetes/scheme
+  - kubernetes/typed/admissionregistration/v1alpha1
+  - kubernetes/typed/admissionregistration/v1alpha1/fake
+  - kubernetes/typed/apps/v1beta1
+  - kubernetes/typed/apps/v1beta1/fake
+  - kubernetes/typed/apps/v1beta2
+  - kubernetes/typed/apps/v1beta2/fake
+  - kubernetes/typed/authentication/v1
+  - kubernetes/typed/authentication/v1/fake
+  - kubernetes/typed/authentication/v1beta1
+  - kubernetes/typed/authentication/v1beta1/fake
+  - kubernetes/typed/authorization/v1
+  - kubernetes/typed/authorization/v1/fake
+  - kubernetes/typed/authorization/v1beta1
+  - kubernetes/typed/authorization/v1beta1/fake
+  - kubernetes/typed/autoscaling/v1
+  - kubernetes/typed/autoscaling/v1/fake
+  - kubernetes/typed/autoscaling/v2beta1
+  - kubernetes/typed/autoscaling/v2beta1/fake
+  - kubernetes/typed/batch/v1
+  - kubernetes/typed/batch/v1/fake
+  - kubernetes/typed/batch/v1beta1
+  - kubernetes/typed/batch/v1beta1/fake
+  - kubernetes/typed/batch/v2alpha1
+  - kubernetes/typed/batch/v2alpha1/fake
+  - kubernetes/typed/certificates/v1beta1
+  - kubernetes/typed/certificates/v1beta1/fake
+  - kubernetes/typed/core/v1
+  - kubernetes/typed/core/v1/fake
+  - kubernetes/typed/extensions/v1beta1
+  - kubernetes/typed/extensions/v1beta1/fake
+  - kubernetes/typed/networking/v1
+  - kubernetes/typed/networking/v1/fake
+  - kubernetes/typed/policy/v1beta1
+  - kubernetes/typed/policy/v1beta1/fake
+  - kubernetes/typed/rbac/v1
+  - kubernetes/typed/rbac/v1/fake
+  - kubernetes/typed/rbac/v1alpha1
+  - kubernetes/typed/rbac/v1alpha1/fake
+  - kubernetes/typed/rbac/v1beta1
+  - kubernetes/typed/rbac/v1beta1/fake
+  - kubernetes/typed/scheduling/v1alpha1
+  - kubernetes/typed/scheduling/v1alpha1/fake
+  - kubernetes/typed/settings/v1alpha1
+  - kubernetes/typed/settings/v1alpha1/fake
+  - kubernetes/typed/storage/v1
+  - kubernetes/typed/storage/v1/fake
+  - kubernetes/typed/storage/v1beta1
+  - kubernetes/typed/storage/v1beta1/fake
+  - listers/admissionregistration/v1alpha1
+  - listers/apps/v1beta1
+  - listers/apps/v1beta2
+  - listers/autoscaling/v1
+  - listers/autoscaling/v2beta1
+  - listers/batch/v1
+  - listers/batch/v1beta1
+  - listers/batch/v2alpha1
+  - listers/certificates/v1beta1
+  - listers/core/v1
+  - listers/extensions/v1beta1
+  - listers/networking/v1
+  - listers/policy/v1beta1
+  - listers/rbac/v1
+  - listers/rbac/v1alpha1
+  - listers/rbac/v1beta1
+  - listers/scheduling/v1alpha1
+  - listers/settings/v1alpha1
+  - listers/storage/v1
+  - listers/storage/v1beta1
   - pkg/version
   - rest
   - rest/watch
+  - testing
+  - tools/auth
   - tools/cache
+  - tools/clientcmd
   - tools/clientcmd/api
+  - tools/clientcmd/api/latest
+  - tools/clientcmd/api/v1
   - tools/metrics
   - tools/pager
+  - tools/reference
   - transport
   - util/cert
   - util/flowcontrol
+  - util/homedir
   - util/integer
 - name: k8s.io/kube-openapi
-  version: 80f07ef71bb4f781233c65aa8d0369e4ecafab87
+  version: 868f2f29720b192240e18284659231b440f9cda5
   subpackages:
   - pkg/common
 - name: k8s.io/kubernetes
-  version: f24b1ee0ac24977552abe3e37d597bf51cd49619
+  version: bfab46cf2543ac17f8c0e75b80631555ac7a6aed
   subpackages:
   - pkg/apis/rbac
   - pkg/client/listers/rbac/internalversion
