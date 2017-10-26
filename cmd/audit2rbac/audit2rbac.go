@@ -245,19 +245,19 @@ func (a *Audit2RBACOptions) Run() error {
 		}
 		fmt.Fprintln(os.Stdout, "---")
 	}
-	for _, obj := range generated.ClusterRoles {
-		printSeparator()
-		pkg.Output(os.Stdout, obj, "yaml")
-	}
-	for _, obj := range generated.ClusterRoleBindings {
-		printSeparator()
-		pkg.Output(os.Stdout, obj, "yaml")
-	}
 	for _, obj := range generated.Roles {
 		printSeparator()
 		pkg.Output(os.Stdout, obj, "yaml")
 	}
+	for _, obj := range generated.ClusterRoles {
+		printSeparator()
+		pkg.Output(os.Stdout, obj, "yaml")
+	}
 	for _, obj := range generated.RoleBindings {
+		printSeparator()
+		pkg.Output(os.Stdout, obj, "yaml")
+	}
+	for _, obj := range generated.ClusterRoleBindings {
 		printSeparator()
 		pkg.Output(os.Stdout, obj, "yaml")
 	}
