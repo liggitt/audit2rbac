@@ -3,6 +3,7 @@ package pkg
 import (
 	"fmt"
 	"io"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -53,8 +54,41 @@ func compactRules(rules []rbac.PolicyRule) []rbac.PolicyRule {
 	for i := range compactRules {
 		compactRules[i].Verbs = sets.NewString(compactRules[i].Verbs...).List()
 	}
-	sort.Stable(rbac.SortableRuleSlice(compactRules))
-	return compactRules
+
+	accumulatingRules := []rbac.PolicyRule{}
+	for _, rule := range compactRules {
+		// Non-resource rules just accumulate
+		if len(rule.Resources) == 0 {
+			accumulatingRules = append(accumulatingRules, rule)
+			continue
+		}
+
+		accumulated := false
+		// strip resource
+		resourcelessRule := rule
+		resourcelessRule.Resources = nil
+		for j, accumulatingRule := range accumulatingRules {
+			// strip resource
+			resourcelessAccumulatingRule := accumulatingRule
+			resourcelessAccumulatingRule.Resources = nil
+
+			// if all other fields are identical (api group, verbs, names, etc, accumulate resources)
+			if reflect.DeepEqual(resourcelessRule, resourcelessAccumulatingRule) {
+				combinedResources := sets.NewString(accumulatingRule.Resources...)
+				combinedResources.Insert(rule.Resources...)
+				accumulatingRule.Resources = combinedResources.List()
+				accumulatingRules[j] = accumulatingRule
+				accumulated = true
+				break
+			}
+		}
+		if !accumulated {
+			accumulatingRules = append(accumulatingRules, rule)
+		}
+	}
+
+	sort.Stable(rbac.SortableRuleSlice(accumulatingRules))
+	return accumulatingRules
 }
 
 func sortRequests(requests []authorizer.AttributesRecord) {
