@@ -67,12 +67,25 @@ func compactRules(rules []rbac.PolicyRule) []rbac.PolicyRule {
 		// strip resource
 		resourcelessRule := rule
 		resourcelessRule.Resources = nil
+		// strip name
+		namelessRule := rule
+		namelessRule.ResourceNames = nil
 		for j, accumulatingRule := range accumulatingRules {
+			// strip name
+			namelessAccumulatingRule := accumulatingRule
+			namelessAccumulatingRule.ResourceNames = nil
+			if reflect.DeepEqual(namelessRule, namelessAccumulatingRule) {
+				combinedNames := sets.NewString(accumulatingRule.ResourceNames...)
+				combinedNames.Insert(rule.ResourceNames...)
+				accumulatingRule.ResourceNames = combinedNames.List()
+				accumulatingRules[j] = accumulatingRule
+				accumulated = true
+				break
+			}
+
 			// strip resource
 			resourcelessAccumulatingRule := accumulatingRule
 			resourcelessAccumulatingRule.Resources = nil
-
-			// if all other fields are identical (api group, verbs, names, etc, accumulate resources)
 			if reflect.DeepEqual(resourcelessRule, resourcelessAccumulatingRule) {
 				combinedResources := sets.NewString(accumulatingRule.Resources...)
 				combinedResources.Insert(rule.Resources...)

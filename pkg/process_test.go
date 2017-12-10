@@ -148,12 +148,8 @@ func TestProcessOptions(t *testing.T) {
 				ClusterRoles: []*rbacinternal.ClusterRole{&rbacinternal.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
 					Rules: []rbacinternal.PolicyRule{
-						// TODO: improve compaction to make this a single rule referencing two names
-						rbacinternal.NewRule("get").Groups("").Resources("nodes").Names("node1").RuleOrDie(),
-						rbacinternal.NewRule("get").Groups("").Resources("nodes").Names("node2").RuleOrDie(),
-						// TODO: improve compaction to make this a single rule referencing two names
-						rbacinternal.NewRule("get").Groups("storage.k8s.io").Resources("storageclasses").Names("sc1").RuleOrDie(),
-						rbacinternal.NewRule("get").Groups("storage.k8s.io").Resources("storageclasses").Names("sc2").RuleOrDie(),
+						rbacinternal.NewRule("get").Groups("").Resources("nodes").Names("node1", "node2").RuleOrDie(),
+						rbacinternal.NewRule("get").Groups("storage.k8s.io").Resources("storageclasses").Names("sc1", "sc2").RuleOrDie(),
 					},
 				}},
 				ClusterRoleBindings: []*rbacinternal.ClusterRoleBinding{&rbacinternal.ClusterRoleBinding{
@@ -439,23 +435,15 @@ func TestProcessOptions(t *testing.T) {
 					&rbacinternal.Role{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns2"},
 						Rules: []rbacinternal.PolicyRule{
-							// TODO: improve compaction to make this a single rule referencing two names
-							rbacinternal.NewRule("get").Groups("").Resources("pods").Names("pod1").RuleOrDie(),
-							rbacinternal.NewRule("get").Groups("").Resources("pods").Names("pod2").RuleOrDie(),
-							// TODO: improve compaction to make this a single rule referencing two names
-							rbacinternal.NewRule("get").Groups("apps").Resources("deployments").Names("dep1").RuleOrDie(),
-							rbacinternal.NewRule("get").Groups("apps").Resources("deployments").Names("dep2").RuleOrDie(),
+							rbacinternal.NewRule("get").Groups("").Resources("pods").Names("pod1", "pod2").RuleOrDie(),
+							rbacinternal.NewRule("get").Groups("apps").Resources("deployments").Names("dep1", "dep2").RuleOrDie(),
 						},
 					},
 					&rbacinternal.Role{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns3"},
 						Rules: []rbacinternal.PolicyRule{
-							// TODO: improve compaction to make this a single rule referencing two names
-							rbacinternal.NewRule("get").Groups("").Resources("pods").Names("pod1").RuleOrDie(),
-							rbacinternal.NewRule("get").Groups("").Resources("pods").Names("pod3").RuleOrDie(),
-							// TODO: improve compaction to make this a single rule referencing two names
-							rbacinternal.NewRule("get").Groups("apps").Resources("deployments").Names("dep1").RuleOrDie(),
-							rbacinternal.NewRule("get").Groups("apps").Resources("deployments").Names("dep3").RuleOrDie(),
+							rbacinternal.NewRule("get").Groups("").Resources("pods").Names("pod1", "pod3").RuleOrDie(),
+							rbacinternal.NewRule("get").Groups("apps").Resources("deployments").Names("dep1", "dep3").RuleOrDie(),
 						},
 					},
 				},
