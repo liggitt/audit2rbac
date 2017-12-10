@@ -194,6 +194,8 @@ func Output(w io.Writer, obj runtime.Object, format string) error {
 		s = json.NewSerializer(json.DefaultMetaFactory, Scheme, Scheme, true)
 	case "yaml":
 		s = json.NewYAMLSerializer(json.DefaultMetaFactory, Scheme, Scheme)
+		// TODO: clean up "creationTimestamp: null" upstream
+		w = &stripCreationTimestamp{w}
 	default:
 		return fmt.Errorf("unknown format: %s", format)
 	}
@@ -201,4 +203,17 @@ func Output(w io.Writer, obj runtime.Object, format string) error {
 	codec := serializer.NewCodecFactory(Scheme).CodecForVersions(s, s, rbacv1.SchemeGroupVersion, rbacv1.SchemeGroupVersion)
 
 	return codec.Encode(obj, w)
+}
+
+type stripCreationTimestamp struct {
+	w io.Writer
+}
+
+func (s *stripCreationTimestamp) Write(p []byte) (n int, err error) {
+	p2 := strings.Replace(string(p), "\n  creationTimestamp: null\n", "\n", -1)
+	n, err = s.w.Write([]byte(p2))
+	if n == len(p2) {
+		n = len(p)
+	}
+	return n, err
 }
