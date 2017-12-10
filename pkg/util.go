@@ -87,7 +87,13 @@ func compactRules(rules []rbac.PolicyRule) []rbac.PolicyRule {
 		}
 	}
 
-	sort.Stable(rbac.SortableRuleSlice(accumulatingRules))
+	sort.SliceStable(accumulatingRules, func(i, j int) bool {
+		// TODO: fix upstream sorting to prioritize API group
+		if c := strings.Compare(strings.Join(accumulatingRules[i].APIGroups, ","), strings.Join(accumulatingRules[j].APIGroups, ",")); c != 0 {
+			return c < 0
+		}
+		return strings.Compare(accumulatingRules[i].CompactString(), accumulatingRules[j].CompactString()) < 0
+	})
 	return accumulatingRules
 }
 
