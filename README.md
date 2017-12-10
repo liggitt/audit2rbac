@@ -4,10 +4,12 @@
 
 audit2rbac takes a [Kubernetes audit log](https://kubernetes.io/docs/tasks/debug-application-cluster/audit/) and username as input, and generates [RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) role and binding objects that cover all the API requests made by that user.
 
-audit2rbac is in the nascent stages of development, and will change internal and external interfaces before a stable release.
+* [Latest release, pre-built binaries](https://github.com/liggitt/audit2rbac/releases/latest)
+* [All releases](https://github.com/liggitt/audit2rbac/releases)
 
-* [Releases](https://github.com/liggitt/audit2rbac/releases)
-* [Known issues](https://github.com/liggitt/audit2rbac/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
+## Demo Video
+
+<a href="https://youtu.be/anR1MjMi5J8"><img src="https://user-images.githubusercontent.com/980082/33801800-892ce3fc-dd34-11e7-8d91-906cdc025812.png"></a>
 
 ## User Instructions
 
