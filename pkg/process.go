@@ -42,8 +42,8 @@ func DefaultGenerateOptions() GenerateOptions {
 		ExpandMultipleNamespacesToClusterScoped: true,
 
 		NamePrefix:  "audit2rbac",
-		Labels:      map[string]string{},
-		Annotations: map[string]string{},
+		Labels:      nil,
+		Annotations: nil,
 	}
 }
 
