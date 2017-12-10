@@ -41,11 +41,12 @@ func checkErr(w io.Writer, err error) {
 }
 
 func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
+	name := "audit2rbac:${user}"
+	annotations := []string{"audit2rbac.liggitt.net/version=${version}"}
+	labels := []string{"audit2rbac.liggitt.net/user=${user}", "audit2rbac.liggitt.net/generated=true"}
+
 	options := &Audit2RBACOptions{
-		GeneratedPath:        ".",
-		GeneratedNamePrefix:  "",
-		GeneratedLabels:      map[string]string{},
-		GeneratedAnnotations: map[string]string{},
+		GeneratedPath: ".",
 
 		ExpandMultipleNamespacesToClusterScoped: true,
 		ExpandMultipleNamesToUnnamed:            true,
@@ -68,7 +69,7 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 				return
 			}
 
-			checkErr(stderr, options.Complete(serviceAccount, args))
+			checkErr(stderr, options.Complete(serviceAccount, args, name, annotations, labels))
 
 			if err := options.Validate(); err != nil {
 				fmt.Fprintln(stderr, err)
@@ -82,11 +83,19 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 	}
 
 	cmd.Flags().StringArrayVarP(&options.AuditSources, "filename", "f", options.AuditSources, "File, URL, or - for STDIN to read audit events from")
+
 	cmd.Flags().StringVar(&options.User, "user", options.User, "User to filter audit events to and generate role bindings for")
 	cmd.Flags().StringVar(&serviceAccount, "serviceaccount", serviceAccount, "Service account to filter audit events to and generate role bindings for, in format <namespace>:<name>")
+
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", options.Namespace, "Namespace to filter audit events to")
+
 	cmd.Flags().BoolVar(&options.ExpandMultipleNamespacesToClusterScoped, "expand-multi-namespace", options.ExpandMultipleNamespacesToClusterScoped, "Allow identical operations performed in more than one namespace to be performed in any namespace")
 	cmd.Flags().BoolVar(&options.ExpandMultipleNamesToUnnamed, "expand-multi-name", options.ExpandMultipleNamesToUnnamed, "Allow identical operations performed on more than one resource name (e.g. 'get pods pod1' and 'get pods pod2') to be allowed on any name")
+
+	cmd.Flags().StringVar(&name, "generate-name", name, "Name to use for generated objects")
+	cmd.Flags().StringSliceVar(&annotations, "generate-annotations", annotations, "Annotations to add to generated objects")
+	cmd.Flags().StringSliceVar(&labels, "generate-labels", labels, "Labels to add to generated objects")
+
 	cmd.Flags().BoolVar(&showVersion, "version", false, "Display version")
 
 	return cmd
@@ -109,12 +118,12 @@ type Audit2RBACOptions struct {
 
 	// Directory to write generated roles to. Defaults to current directory.
 	GeneratedPath string
-	// Prefix for generated object names. Defaults to "audit2rbac:<user>"
-	GeneratedNamePrefix string
+	// Name for generated objects. Defaults to "audit2rbac:<user>"
+	Name string
 	// Labels to apply to generated object names.
-	GeneratedLabels map[string]string
+	Labels map[string]string
 	// Annotations to apply to generated object names.
-	GeneratedAnnotations map[string]string
+	Annotations map[string]string
 
 	// If the same operation is performed in multiple namespaces, expand the permission to allow it in any namespace
 	ExpandMultipleNamespacesToClusterScoped bool
@@ -125,7 +134,7 @@ type Audit2RBACOptions struct {
 	Stderr io.Writer
 }
 
-func (a *Audit2RBACOptions) Complete(serviceAccount string, args []string) error {
+func (a *Audit2RBACOptions) Complete(serviceAccount string, args []string, name string, annotations, labels []string) error {
 	if len(serviceAccount) > 0 && len(a.User) > 0 {
 		return fmt.Errorf("cannot set both user and service account")
 	}
@@ -137,20 +146,48 @@ func (a *Audit2RBACOptions) Complete(serviceAccount string, args []string) error
 		a.User = serviceaccount.MakeUsername(parts[0], parts[1])
 	}
 
-	if len(a.GeneratedLabels) == 0 {
-		a.GeneratedLabels["audit2rbac.liggitt.net/user"] = sanitizeLabel(a.User)
-		a.GeneratedLabels["audit2rbac.liggitt.net/generated"] = "true"
-	}
-	if len(a.GeneratedAnnotations) == 0 {
-		a.GeneratedAnnotations["audit2rbac.liggitt.net/version"] = pkg.Version
+	a.Annotations = nil
+	for _, s := range annotations {
+		s = strings.TrimSpace(s)
+		if len(s) == 0 {
+			continue
+		}
+		if a.Annotations == nil {
+			a.Annotations = map[string]string{}
+		}
+		s = strings.Replace(s, "${user}", a.User, -1)
+		s = strings.Replace(s, "${version}", pkg.Version, -1)
+		parts := strings.SplitN(s, "=", 2)
+		if len(parts) == 1 {
+			a.Annotations[parts[0]] = ""
+		} else {
+			a.Annotations[parts[0]] = parts[1]
+		}
 	}
 
-	if len(a.GeneratedNamePrefix) == 0 {
-		user := a.User
-		if _, name, err := serviceaccount.SplitUsername(a.User); err == nil && name != "default" {
-			user = name
+	a.Labels = nil
+	for _, s := range labels {
+		s = strings.TrimSpace(s)
+		if len(s) == 0 {
+			continue
 		}
-		a.GeneratedNamePrefix = "audit2rbac:" + sanitizeName(user)
+		if a.Labels == nil {
+			a.Labels = map[string]string{}
+		}
+		s = strings.Replace(s, "${user}", sanitizeLabel(a.User), -1)
+		s = strings.Replace(s, "${version}", sanitizeLabel(pkg.Version), -1)
+		parts := strings.SplitN(s, "=", 2)
+		if len(parts) == 1 {
+			a.Labels[parts[0]] = ""
+		} else {
+			a.Labels[parts[0]] = parts[1]
+		}
+	}
+
+	if len(name) > 0 {
+		name = strings.Replace(name, "${user}", sanitizeName(a.User), -1)
+		name = strings.Replace(name, "${version}", sanitizeName(pkg.Version), -1)
+		a.Name = name
 	}
 
 	if a.Stderr == nil {
@@ -239,9 +276,9 @@ func (a *Audit2RBACOptions) Run() error {
 	fmt.Fprintln(a.Stderr, "Evaluating API calls...")
 
 	opts := pkg.DefaultGenerateOptions()
-	opts.Labels = a.GeneratedLabels
-	opts.Annotations = a.GeneratedAnnotations
-	opts.NamePrefix = a.GeneratedNamePrefix
+	opts.Labels = a.Labels
+	opts.Annotations = a.Annotations
+	opts.Name = a.Name
 	opts.ExpandMultipleNamespacesToClusterScoped = a.ExpandMultipleNamespacesToClusterScoped
 	opts.ExpandMultipleNamesToUnnamed = a.ExpandMultipleNamesToUnnamed
 
