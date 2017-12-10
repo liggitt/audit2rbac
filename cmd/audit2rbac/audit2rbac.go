@@ -47,6 +47,9 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 		GeneratedLabels:      map[string]string{},
 		GeneratedAnnotations: map[string]string{},
 
+		ExpandMultipleNamespacesToClusterScoped: true,
+		ExpandMultipleNamesToUnnamed:            true,
+
 		Stdout: stdout,
 		Stderr: stderr,
 	}
@@ -82,6 +85,8 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 	cmd.Flags().StringVar(&options.User, "user", options.User, "User to filter audit events to and generate role bindings for")
 	cmd.Flags().StringVar(&serviceAccount, "serviceaccount", serviceAccount, "Service account to filter audit events to and generate role bindings for, in format <namespace>:<name>")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", options.Namespace, "Namespace to filter audit events to")
+	cmd.Flags().BoolVar(&options.ExpandMultipleNamespacesToClusterScoped, "expand-multi-namespace", options.ExpandMultipleNamespacesToClusterScoped, "Allow identical operations performed in more than one namespace to be performed in any namespace")
+	cmd.Flags().BoolVar(&options.ExpandMultipleNamesToUnnamed, "expand-multi-name", options.ExpandMultipleNamesToUnnamed, "Allow identical operations performed on more than one resource name (e.g. 'get pods pod1' and 'get pods pod2') to be allowed on any name")
 	cmd.Flags().BoolVar(&showVersion, "version", false, "Display version")
 
 	return cmd
@@ -110,6 +115,11 @@ type Audit2RBACOptions struct {
 	GeneratedLabels map[string]string
 	// Annotations to apply to generated object names.
 	GeneratedAnnotations map[string]string
+
+	// If the same operation is performed in multiple namespaces, expand the permission to allow it in any namespace
+	ExpandMultipleNamespacesToClusterScoped bool
+	// If the same operation is performed on resources with different names, expand the permission to allow it on any name
+	ExpandMultipleNamesToUnnamed bool
 
 	Stdout io.Writer
 	Stderr io.Writer
@@ -232,6 +242,8 @@ func (a *Audit2RBACOptions) Run() error {
 	opts.Labels = a.GeneratedLabels
 	opts.Annotations = a.GeneratedAnnotations
 	opts.NamePrefix = a.GeneratedNamePrefix
+	opts.ExpandMultipleNamespacesToClusterScoped = a.ExpandMultipleNamespacesToClusterScoped
+	opts.ExpandMultipleNamesToUnnamed = a.ExpandMultipleNamesToUnnamed
 
 	generated := pkg.NewGenerator(getDiscoveryRoles(), attributes, opts).Generate()
 

@@ -102,8 +102,12 @@ func (g *Generator) Generate() *RBACObjects {
 		}
 
 		requestCopy := request
-		requestCopy.Name = ""
-		requestCopy.Namespace = ""
+		if g.Options.ExpandMultipleNamesToUnnamed {
+			requestCopy.Name = ""
+		}
+		if g.Options.ExpandMultipleNamespacesToClusterScoped {
+			requestCopy.Namespace = ""
+		}
 		requestCopy.Path = ""
 
 		if (request.Namespace != "" && g.Options.ExpandMultipleNamespacesToClusterScoped) || (request.Name != "" && g.Options.ExpandMultipleNamesToUnnamed) {
@@ -114,8 +118,12 @@ func (g *Generator) Generate() *RBACObjects {
 				if !a.ResourceRequest {
 					continue
 				}
-				a.Name = ""
-				a.Namespace = ""
+				if g.Options.ExpandMultipleNamesToUnnamed {
+					a.Name = ""
+				}
+				if g.Options.ExpandMultipleNamespacesToClusterScoped {
+					a.Namespace = ""
+				}
 				a.Path = ""
 				if reflect.DeepEqual(requestCopy, a) {
 					if g.Options.ExpandMultipleNamespacesToClusterScoped && differentNamespace {
