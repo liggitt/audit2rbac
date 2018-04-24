@@ -88,10 +88,10 @@ func (g *Generator) Generate() *RBACObjects {
 	sortRequests(g.requests)
 
 	for _, request := range g.requests {
-		if ok, _, _ := existingAuthorizer.Authorize(request); ok {
+		if decision, _, _ := existingAuthorizer.Authorize(request); decision == authorizer.DecisionAllow {
 			continue
 		}
-		if ok, _, _ := generatedAuthorizer.Authorize(request); ok {
+		if decision, _, _ := generatedAuthorizer.Authorize(request); decision == authorizer.DecisionAllow {
 			continue
 		}
 

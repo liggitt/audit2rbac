@@ -19,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	unstructuredconversion "k8s.io/apimachinery/pkg/conversion/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/apiserver/pkg/apis/audit"
@@ -478,7 +477,7 @@ func typecast(in <-chan *streamObject, creator runtime.ObjectCreater) <-chan *st
 				out <- &streamObject{err: fmt.Errorf("expected *unstructured.Unstructured, got %T", result.obj)}
 			}
 
-			if err := unstructuredconversion.DefaultConverter.FromUnstructured(unstructuredObject.Object, typed); err != nil {
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObject.Object, typed); err != nil {
 				out <- &streamObject{err: err}
 				continue
 			}
@@ -587,7 +586,7 @@ func getDiscoveryRoles() pkg.RBACObjects {
 			&rbacinternal.ClusterRole{
 				ObjectMeta: metav1.ObjectMeta{Name: "system:discovery"},
 				Rules: []rbacinternal.PolicyRule{
-					rbacinternal.NewRule("get").URLs("/healthz", "/version", "/swagger*", "/api*").RuleOrDie(),
+					rbacinternal.NewRule("get").URLs("/healthz", "/version", "/swagger*", "/openapi*", "/api*").RuleOrDie(),
 				},
 			},
 		},
