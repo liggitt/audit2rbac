@@ -18,7 +18,7 @@ audit2rbac takes a [Kubernetes audit log](https://kubernetes.io/docs/tasks/debug
     * `v1alpha1` or `v1beta1` audit events are supported.
     * The `Metadata` log level works best to minimize log size.
     * To exercise all API calls, it is sometimes necessary to grant broad access to a user or application to avoid short-circuiting code paths on failed API requests. This should be done cautiously, ideally in a development environment.
-    * A [sample log](testdata/demo.log) containing requests from `alice`, `bob`, and the service account `ns1:sa1` is available.
+    * A [sample audit policy](testdata/demo-policy.yaml) and a [sample audit log](testdata/demo.log) containing requests from `alice`, `bob`, and the service account `ns1:sa1` is available.
 2. Identify a specific user you want to scan for audit events for and generate roles and role bindings for:
     * Specify a normal user with `--user <username>`
     * Specify a service account with `--serviceaccount <namespace>:<name>`
@@ -37,7 +37,6 @@ audit2rbac takes a [Kubernetes audit log](https://kubernetes.io/docs/tasks/debug
     apiVersion: rbac.authorization.k8s.io/v1
     kind: Role
     metadata:
-      creationTimestamp: null
       labels:
         audit2rbac.liggitt.net/generated: "true"
         audit2rbac.liggitt.net/user: alice
@@ -48,21 +47,7 @@ audit2rbac takes a [Kubernetes audit log](https://kubernetes.io/docs/tasks/debug
       - ""
       resources:
       - configmaps
-      verbs:
-      - get
-      - list
-      - watch
-    - apiGroups:
-      - ""
-      resources:
       - pods
-      verbs:
-      - get
-      - list
-      - watch
-    - apiGroups:
-      - ""
-      resources:
       - secrets
       verbs:
       - get
@@ -72,7 +57,6 @@ audit2rbac takes a [Kubernetes audit log](https://kubernetes.io/docs/tasks/debug
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
     metadata:
-      creationTimestamp: null
       labels:
         audit2rbac.liggitt.net/generated: "true"
         audit2rbac.liggitt.net/user: alice
@@ -98,8 +82,8 @@ audit2rbac takes a [Kubernetes audit log](https://kubernetes.io/docs/tasks/debug
 ## Developer Instructions
 
 Requirements:
-* Go 1.8+
-* Glide 0.12.3+
+* Go 1.9.x
+* Glide 0.13.1+
 
 To build and install from source:
 ```sh
