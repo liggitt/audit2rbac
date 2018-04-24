@@ -16,10 +16,10 @@ update-deps:
 clean-deps:
 	rm -fr vendor
 
-build:
+build: check_go_version
 	go build -o bin/audit2rbac $(shell ./build/print-ldflags.sh) ./cmd/audit2rbac
 
-build-cross:
+build-cross: check_go_version
 	./build/build-cross.sh cmd/audit2rbac/audit2rbac.go
 
 install:
@@ -56,5 +56,13 @@ lint:
 	if [ "$$OUTPUT" ]; then \
 		echo "golint errors:"; \
 		echo "$$OUTPUT"; \
+		exit 1; \
+	fi
+
+check_go_version:
+	@OUTPUT=`go version`; \
+	if [[ "$$OUTPUT" != *"go1.9."* ]]; then \
+		echo "Expected: go version go1.9.*"; \
+		echo "Found:    $$OUTPUT"; \
 		exit 1; \
 	fi
