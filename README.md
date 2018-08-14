@@ -9,7 +9,7 @@ audit2rbac takes a [Kubernetes audit log](https://kubernetes.io/docs/tasks/debug
 
 ## Demo Video
 
-<a href="https://youtu.be/anR1MjMi5J8"><img src="https://user-images.githubusercontent.com/980082/33801800-892ce3fc-dd34-11e7-8d91-906cdc025812.png"></a>
+<a href="https://youtu.be/n2cD20moYe8"><img src="https://user-images.githubusercontent.com/980082/33801800-892ce3fc-dd34-11e7-8d91-906cdc025812.png"></a>
 
 ## User Instructions
 
