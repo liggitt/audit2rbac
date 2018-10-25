@@ -15,7 +15,7 @@ audit2rbac takes a [Kubernetes audit log](https://kubernetes.io/docs/tasks/debug
 
 1. Obtain a Kubernetes audit log containing all the API requests you expect your user to perform:
     * The log must be in JSON format. This requires running an API server with `--feature-gates=AdvancedAudit=true` and an `--audit-policy-file` defined. See [documentation](https://kubernetes.io/docs/tasks/debug-application-cluster/audit/#advanced-audit) for more details.
-    * `v1alpha1` or `v1beta1` audit events are supported.
+    * `audit.k8s.io/v1`, `audit.k8s.io/v1beta1` and `audit.k8s.io/v1alpha1` events are supported.
     * The `Metadata` log level works best to minimize log size.
     * To exercise all API calls, it is sometimes necessary to grant broad access to a user or application to avoid short-circuiting code paths on failed API requests. This should be done cautiously, ideally in a development environment.
     * A [sample audit policy](testdata/demo-policy.yaml) and a [sample audit log](testdata/demo.log) containing requests from `alice`, `bob`, and the service account `ns1:sa1` is available.
@@ -82,7 +82,7 @@ audit2rbac takes a [Kubernetes audit log](https://kubernetes.io/docs/tasks/debug
 ## Developer Instructions
 
 Requirements:
-* Go 1.9.x
+* Go 1.11.x
 * Glide 0.13.1+
 
 To build and install from source:
