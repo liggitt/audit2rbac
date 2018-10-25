@@ -3,19 +3,21 @@ package pkg
 import (
 	"reflect"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
 	"k8s.io/kubernetes/pkg/apis/rbac"
+	rbacv1helper "k8s.io/kubernetes/pkg/apis/rbac/v1"
 	"k8s.io/kubernetes/pkg/registry/rbac/validation"
 	rbacauthorizer "k8s.io/kubernetes/plugin/pkg/auth/authorizer/rbac"
 )
 
 // RBACObjects holds lists of RBAC API objects
 type RBACObjects struct {
-	Roles               []*rbac.Role
-	RoleBindings        []*rbac.RoleBinding
-	ClusterRoles        []*rbac.ClusterRole
-	ClusterRoleBindings []*rbac.ClusterRoleBinding
+	Roles               []*rbacv1.Role
+	RoleBindings        []*rbacv1.RoleBinding
+	ClusterRoles        []*rbacv1.ClusterRole
+	ClusterRoleBindings []*rbacv1.ClusterRoleBinding
 }
 
 // GenerateOptions specifies options for generating RBAC roles
@@ -57,10 +59,10 @@ type Generator struct {
 	generated       RBACObjects
 	generatedGetter *validation.StaticRoles
 
-	clusterRole           *rbac.ClusterRole
-	clusterRoleBinding    *rbac.ClusterRoleBinding
-	namespacedRole        map[string]*rbac.Role
-	namespacedRoleBinding map[string]*rbac.RoleBinding
+	clusterRole           *rbacv1.ClusterRole
+	clusterRoleBinding    *rbacv1.ClusterRoleBinding
+	namespacedRole        map[string]*rbacv1.Role
+	namespacedRoleBinding map[string]*rbacv1.RoleBinding
 }
 
 // NewGenerator creates a new Generator
@@ -71,8 +73,8 @@ func NewGenerator(existing RBACObjects, requests []authorizer.AttributesRecord, 
 		existing:              existing,
 		requests:              requests,
 		Options:               options,
-		namespacedRole:        map[string]*rbac.Role{},
-		namespacedRoleBinding: map[string]*rbac.RoleBinding{},
+		namespacedRole:        map[string]*rbacv1.Role{},
+		namespacedRoleBinding: map[string]*rbacv1.RoleBinding{},
 		generatedGetter:       getter,
 	}
 }
@@ -97,7 +99,7 @@ func (g *Generator) Generate() *RBACObjects {
 
 		if !request.ResourceRequest {
 			clusterRole := g.ensureClusterRoleAndBinding(userToSubject(request.User))
-			clusterRole.Rules = append(clusterRole.Rules, rbac.NewRule(request.Verb).URLs(request.Path).RuleOrDie())
+			clusterRole.Rules = append(clusterRole.Rules, rbacv1helper.NewRule(request.Verb).URLs(request.Path).RuleOrDie())
 			continue
 		}
 
@@ -156,18 +158,18 @@ func (g *Generator) Generate() *RBACObjects {
 	return &g.generated
 }
 
-func (g *Generator) ensureClusterRoleAndBinding(subject rbac.Subject) *rbac.ClusterRole {
+func (g *Generator) ensureClusterRoleAndBinding(subject rbacv1.Subject) *rbacv1.ClusterRole {
 	if g.clusterRole != nil {
 		return g.clusterRole
 	}
 
-	g.clusterRole = &rbac.ClusterRole{
+	g.clusterRole = &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{Name: g.Options.Name, Labels: g.Options.Labels, Annotations: g.Options.Annotations},
 	}
-	g.clusterRoleBinding = &rbac.ClusterRoleBinding{
+	g.clusterRoleBinding = &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: g.Options.Name, Labels: g.Options.Labels, Annotations: g.Options.Annotations},
-		RoleRef:    rbac.RoleRef{APIGroup: rbac.GroupName, Kind: "ClusterRole", Name: g.clusterRole.Name},
-		Subjects:   []rbac.Subject{subject},
+		RoleRef:    rbacv1.RoleRef{APIGroup: rbac.GroupName, Kind: "ClusterRole", Name: g.clusterRole.Name},
+		Subjects:   []rbacv1.Subject{subject},
 	}
 
 	g.generated.ClusterRoles = append(g.generated.ClusterRoles, g.clusterRole)
@@ -179,18 +181,18 @@ func (g *Generator) ensureClusterRoleAndBinding(subject rbac.Subject) *rbac.Clus
 	return g.clusterRole
 }
 
-func (g *Generator) ensureNamespacedRoleAndBinding(subject rbac.Subject, namespace string) *rbac.Role {
+func (g *Generator) ensureNamespacedRoleAndBinding(subject rbacv1.Subject, namespace string) *rbacv1.Role {
 	if g.namespacedRole[namespace] != nil {
 		return g.namespacedRole[namespace]
 	}
 
-	g.namespacedRole[namespace] = &rbac.Role{
+	g.namespacedRole[namespace] = &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{Name: g.Options.Name, Namespace: namespace, Labels: g.Options.Labels, Annotations: g.Options.Annotations},
 	}
-	g.namespacedRoleBinding[namespace] = &rbac.RoleBinding{
+	g.namespacedRoleBinding[namespace] = &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: g.Options.Name, Namespace: namespace, Labels: g.Options.Labels, Annotations: g.Options.Annotations},
-		RoleRef:    rbac.RoleRef{APIGroup: rbac.GroupName, Kind: "Role", Name: g.namespacedRole[namespace].Name},
-		Subjects:   []rbac.Subject{subject},
+		RoleRef:    rbacv1.RoleRef{APIGroup: rbac.GroupName, Kind: "Role", Name: g.namespacedRole[namespace].Name},
+		Subjects:   []rbacv1.Subject{subject},
 	}
 
 	g.generated.Roles = append(g.generated.Roles, g.namespacedRole[namespace])

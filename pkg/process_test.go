@@ -5,42 +5,43 @@ import (
 	"os"
 	"testing"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apiserver/pkg/authentication/user"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
-	rbacinternal "k8s.io/kubernetes/pkg/apis/rbac"
+	rbacv1helper "k8s.io/kubernetes/pkg/apis/rbac/v1"
 )
 
 func TestProcessOptions(t *testing.T) {
 	bob := &user.DefaultInfo{Name: "bob", Groups: []string{"system:authenticated"}}
 	existing := RBACObjects{
-		ClusterRoles: []*rbacinternal.ClusterRole{
-			&rbacinternal.ClusterRole{
+		ClusterRoles: []*rbacv1.ClusterRole{
+			&rbacv1.ClusterRole{
 				ObjectMeta: metav1.ObjectMeta{Name: "cluster-admin"},
-				Rules: []rbacinternal.PolicyRule{
-					rbacinternal.NewRule("*").Groups("*").Resources("*").RuleOrDie(),
-					rbacinternal.NewRule("*").URLs("*").RuleOrDie(),
+				Rules: []rbacv1.PolicyRule{
+					rbacv1helper.NewRule("*").Groups("*").Resources("*").RuleOrDie(),
+					rbacv1helper.NewRule("*").URLs("*").RuleOrDie(),
 				},
 			},
-			&rbacinternal.ClusterRole{
+			&rbacv1.ClusterRole{
 				ObjectMeta: metav1.ObjectMeta{Name: "system:discovery"},
-				Rules: []rbacinternal.PolicyRule{
-					rbacinternal.NewRule("get").URLs("/healthz", "/version", "/swaggerapi", "/swaggerapi/*", "/api", "/api/*", "/apis", "/apis/*").RuleOrDie(),
+				Rules: []rbacv1.PolicyRule{
+					rbacv1helper.NewRule("get").URLs("/healthz", "/version", "/swaggerapi", "/swaggerapi/*", "/api", "/api/*", "/apis", "/apis/*").RuleOrDie(),
 				},
 			},
 		},
-		ClusterRoleBindings: []*rbacinternal.ClusterRoleBinding{
-			&rbacinternal.ClusterRoleBinding{
+		ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
+			&rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{Name: "cluster-admin"},
-				Subjects:   []rbacinternal.Subject{{Kind: rbacinternal.GroupKind, APIGroup: rbacinternal.GroupName, Name: "system:masters"}},
-				RoleRef:    rbacinternal.RoleRef{APIGroup: rbacinternal.GroupName, Kind: "ClusterRole", Name: "cluster-admin"},
+				Subjects:   []rbacv1.Subject{{Kind: rbacv1.GroupKind, APIGroup: rbacv1.GroupName, Name: "system:masters"}},
+				RoleRef:    rbacv1.RoleRef{APIGroup: rbacv1.GroupName, Kind: "ClusterRole", Name: "cluster-admin"},
 			},
-			&rbacinternal.ClusterRoleBinding{
+			&rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{Name: "system:discovery"},
-				Subjects:   []rbacinternal.Subject{{Kind: rbacinternal.GroupKind, APIGroup: rbacinternal.GroupName, Name: "system:authenticated"}},
-				RoleRef:    rbacinternal.RoleRef{APIGroup: rbacinternal.GroupName, Kind: "ClusterRole", Name: "system:discovery"},
+				Subjects:   []rbacv1.Subject{{Kind: rbacv1.GroupKind, APIGroup: rbacv1.GroupName, Name: "system:authenticated"}},
+				RoleRef:    rbacv1.RoleRef{APIGroup: rbacv1.GroupName, Kind: "ClusterRole", Name: "system:discovery"},
 			},
 		},
 	}
@@ -73,14 +74,14 @@ func TestProcessOptions(t *testing.T) {
 				authorizer.AttributesRecord{User: bob, ResourceRequest: false, Verb: "get", Path: "/foo"},
 			},
 			expected: RBACObjects{
-				ClusterRoles: []*rbacinternal.ClusterRole{&rbacinternal.ClusterRole{
+				ClusterRoles: []*rbacv1.ClusterRole{&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					Rules:      []rbacinternal.PolicyRule{rbacinternal.NewRule("get").URLs("/foo").RuleOrDie()},
+					Rules:      []rbacv1.PolicyRule{rbacv1helper.NewRule("get").URLs("/foo").RuleOrDie()},
 				}},
-				ClusterRoleBindings: []*rbacinternal.ClusterRoleBinding{&rbacinternal.ClusterRoleBinding{
+				ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
-					Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+					RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
+					Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 				}},
 			},
 		},
@@ -93,17 +94,17 @@ func TestProcessOptions(t *testing.T) {
 				authorizer.AttributesRecord{User: bob, ResourceRequest: true, Verb: "get", APIGroup: "storage.k8s.io", Resource: "storageclasses", Name: "mysc"},
 			},
 			expected: RBACObjects{
-				ClusterRoles: []*rbacinternal.ClusterRole{&rbacinternal.ClusterRole{
+				ClusterRoles: []*rbacv1.ClusterRole{&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					Rules: []rbacinternal.PolicyRule{
-						rbacinternal.NewRule("get").Groups("").Resources("nodes").Names("mynode").RuleOrDie(),
-						rbacinternal.NewRule("get").Groups("storage.k8s.io").Resources("storageclasses").Names("mysc").RuleOrDie(),
+					Rules: []rbacv1.PolicyRule{
+						rbacv1helper.NewRule("get").Groups("").Resources("nodes").Names("mynode").RuleOrDie(),
+						rbacv1helper.NewRule("get").Groups("storage.k8s.io").Resources("storageclasses").Names("mysc").RuleOrDie(),
 					},
 				}},
-				ClusterRoleBindings: []*rbacinternal.ClusterRoleBinding{&rbacinternal.ClusterRoleBinding{
+				ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
-					Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+					RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
+					Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 				}},
 			},
 		},
@@ -117,17 +118,17 @@ func TestProcessOptions(t *testing.T) {
 				authorizer.AttributesRecord{User: bob, ResourceRequest: true, Verb: "get", APIGroup: "storage.k8s.io", Resource: "storageclasses", Name: "sc2"},
 			},
 			expected: RBACObjects{
-				ClusterRoles: []*rbacinternal.ClusterRole{&rbacinternal.ClusterRole{
+				ClusterRoles: []*rbacv1.ClusterRole{&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					Rules: []rbacinternal.PolicyRule{
-						rbacinternal.NewRule("get").Groups("").Resources("nodes").RuleOrDie(),
-						rbacinternal.NewRule("get").Groups("storage.k8s.io").Resources("storageclasses").RuleOrDie(),
+					Rules: []rbacv1.PolicyRule{
+						rbacv1helper.NewRule("get").Groups("").Resources("nodes").RuleOrDie(),
+						rbacv1helper.NewRule("get").Groups("storage.k8s.io").Resources("storageclasses").RuleOrDie(),
 					},
 				}},
-				ClusterRoleBindings: []*rbacinternal.ClusterRoleBinding{&rbacinternal.ClusterRoleBinding{
+				ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
-					Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+					RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
+					Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 				}},
 			},
 		},
@@ -145,17 +146,17 @@ func TestProcessOptions(t *testing.T) {
 				authorizer.AttributesRecord{User: bob, ResourceRequest: true, Verb: "get", APIGroup: "storage.k8s.io", Resource: "storageclasses", Name: "sc2"},
 			},
 			expected: RBACObjects{
-				ClusterRoles: []*rbacinternal.ClusterRole{&rbacinternal.ClusterRole{
+				ClusterRoles: []*rbacv1.ClusterRole{&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					Rules: []rbacinternal.PolicyRule{
-						rbacinternal.NewRule("get").Groups("").Resources("nodes").Names("node1", "node2").RuleOrDie(),
-						rbacinternal.NewRule("get").Groups("storage.k8s.io").Resources("storageclasses").Names("sc1", "sc2").RuleOrDie(),
+					Rules: []rbacv1.PolicyRule{
+						rbacv1helper.NewRule("get").Groups("").Resources("nodes").Names("node1", "node2").RuleOrDie(),
+						rbacv1helper.NewRule("get").Groups("storage.k8s.io").Resources("storageclasses").Names("sc1", "sc2").RuleOrDie(),
 					},
 				}},
-				ClusterRoleBindings: []*rbacinternal.ClusterRoleBinding{&rbacinternal.ClusterRoleBinding{
+				ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
-					Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+					RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
+					Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 				}},
 			},
 		},
@@ -176,17 +177,17 @@ func TestProcessOptions(t *testing.T) {
 				authorizer.AttributesRecord{User: bob, ResourceRequest: true, Verb: "list", APIGroup: "storage.k8s.io", Resource: "storageclasses"},
 			},
 			expected: RBACObjects{
-				ClusterRoles: []*rbacinternal.ClusterRole{&rbacinternal.ClusterRole{
+				ClusterRoles: []*rbacv1.ClusterRole{&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					Rules: []rbacinternal.PolicyRule{
-						rbacinternal.NewRule("get", "list", "watch").Groups("").Resources("nodes").RuleOrDie(),
-						rbacinternal.NewRule("get", "list", "watch").Groups("storage.k8s.io").Resources("storageclasses").RuleOrDie(),
+					Rules: []rbacv1.PolicyRule{
+						rbacv1helper.NewRule("get", "list", "watch").Groups("").Resources("nodes").RuleOrDie(),
+						rbacv1helper.NewRule("get", "list", "watch").Groups("storage.k8s.io").Resources("storageclasses").RuleOrDie(),
 					},
 				}},
-				ClusterRoleBindings: []*rbacinternal.ClusterRoleBinding{&rbacinternal.ClusterRoleBinding{
+				ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
-					Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+					RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
+					Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 				}},
 			},
 		},
@@ -199,26 +200,26 @@ func TestProcessOptions(t *testing.T) {
 				authorizer.AttributesRecord{User: bob, ResourceRequest: true, Verb: "get", Namespace: "ns2", APIGroup: "", Resource: "pods", Name: "pod1"},
 			},
 			expected: RBACObjects{
-				Roles: []*rbacinternal.Role{
-					&rbacinternal.Role{
+				Roles: []*rbacv1.Role{
+					&rbacv1.Role{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns1"},
-						Rules:      []rbacinternal.PolicyRule{rbacinternal.NewRule("get").Groups("").Resources("configmaps").Names("cm1").RuleOrDie()},
+						Rules:      []rbacv1.PolicyRule{rbacv1helper.NewRule("get").Groups("").Resources("configmaps").Names("cm1").RuleOrDie()},
 					},
-					&rbacinternal.Role{
+					&rbacv1.Role{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns2"},
-						Rules:      []rbacinternal.PolicyRule{rbacinternal.NewRule("get").Groups("").Resources("pods").Names("pod1").RuleOrDie()},
+						Rules:      []rbacv1.PolicyRule{rbacv1helper.NewRule("get").Groups("").Resources("pods").Names("pod1").RuleOrDie()},
 					},
 				},
-				RoleBindings: []*rbacinternal.RoleBinding{
-					&rbacinternal.RoleBinding{
+				RoleBindings: []*rbacv1.RoleBinding{
+					&rbacv1.RoleBinding{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns1"},
-						RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
-						Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+						RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
+						Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 					},
-					&rbacinternal.RoleBinding{
+					&rbacv1.RoleBinding{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns2"},
-						RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
-						Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+						RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
+						Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 					},
 				},
 			},
@@ -241,28 +242,28 @@ func TestProcessOptions(t *testing.T) {
 				authorizer.AttributesRecord{User: bob, ResourceRequest: true, Verb: "get", Namespace: "ns2", APIGroup: "apps", Resource: "deployments", Name: "dep2"},
 			},
 			expected: RBACObjects{
-				ClusterRoles: []*rbacinternal.ClusterRole{&rbacinternal.ClusterRole{
+				ClusterRoles: []*rbacv1.ClusterRole{&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					Rules: []rbacinternal.PolicyRule{
-						rbacinternal.NewRule("get").Groups("").Resources("pods").RuleOrDie(),
-						rbacinternal.NewRule("get").Groups("apps").Resources("deployments").RuleOrDie(),
+					Rules: []rbacv1.PolicyRule{
+						rbacv1helper.NewRule("get").Groups("").Resources("pods").RuleOrDie(),
+						rbacv1helper.NewRule("get").Groups("apps").Resources("deployments").RuleOrDie(),
 					},
 				}},
-				ClusterRoleBindings: []*rbacinternal.ClusterRoleBinding{&rbacinternal.ClusterRoleBinding{
+				ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
-					Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+					RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
+					Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 				}},
-				Roles: []*rbacinternal.Role{&rbacinternal.Role{
+				Roles: []*rbacv1.Role{&rbacv1.Role{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns1"},
-					Rules: []rbacinternal.PolicyRule{
-						rbacinternal.NewRule("get").Groups("").Resources("configmaps").Names("cm1").RuleOrDie(),
+					Rules: []rbacv1.PolicyRule{
+						rbacv1helper.NewRule("get").Groups("").Resources("configmaps").Names("cm1").RuleOrDie(),
 					},
 				}},
-				RoleBindings: []*rbacinternal.RoleBinding{&rbacinternal.RoleBinding{
+				RoleBindings: []*rbacv1.RoleBinding{&rbacv1.RoleBinding{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns1"},
-					RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
-					Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+					RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
+					Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 				}},
 			},
 		},
@@ -290,53 +291,53 @@ func TestProcessOptions(t *testing.T) {
 				authorizer.AttributesRecord{User: bob, ResourceRequest: true, Verb: "get", Namespace: "ns3", APIGroup: "apps", Resource: "deployments", Name: "dep3"},
 			},
 			expected: RBACObjects{
-				ClusterRoles: []*rbacinternal.ClusterRole{&rbacinternal.ClusterRole{
+				ClusterRoles: []*rbacv1.ClusterRole{&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					Rules: []rbacinternal.PolicyRule{
-						rbacinternal.NewRule("get").Groups("").Resources("pods").Names("pod1").RuleOrDie(),
-						rbacinternal.NewRule("get").Groups("apps").Resources("deployments").Names("dep1").RuleOrDie(),
+					Rules: []rbacv1.PolicyRule{
+						rbacv1helper.NewRule("get").Groups("").Resources("pods").Names("pod1").RuleOrDie(),
+						rbacv1helper.NewRule("get").Groups("apps").Resources("deployments").Names("dep1").RuleOrDie(),
 					},
 				}},
-				ClusterRoleBindings: []*rbacinternal.ClusterRoleBinding{&rbacinternal.ClusterRoleBinding{
+				ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
-					Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+					RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
+					Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 				}},
-				Roles: []*rbacinternal.Role{
-					&rbacinternal.Role{
+				Roles: []*rbacv1.Role{
+					&rbacv1.Role{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns1"},
-						Rules:      []rbacinternal.PolicyRule{rbacinternal.NewRule("get").Groups("").Resources("configmaps").Names("cm1").RuleOrDie()},
+						Rules:      []rbacv1.PolicyRule{rbacv1helper.NewRule("get").Groups("").Resources("configmaps").Names("cm1").RuleOrDie()},
 					},
-					&rbacinternal.Role{
+					&rbacv1.Role{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns2"},
-						Rules: []rbacinternal.PolicyRule{
-							rbacinternal.NewRule("get").Groups("").Resources("pods").Names("pod2").RuleOrDie(),
-							rbacinternal.NewRule("get").Groups("apps").Resources("deployments").Names("dep2").RuleOrDie(),
+						Rules: []rbacv1.PolicyRule{
+							rbacv1helper.NewRule("get").Groups("").Resources("pods").Names("pod2").RuleOrDie(),
+							rbacv1helper.NewRule("get").Groups("apps").Resources("deployments").Names("dep2").RuleOrDie(),
 						},
 					},
-					&rbacinternal.Role{
+					&rbacv1.Role{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns3"},
-						Rules: []rbacinternal.PolicyRule{
-							rbacinternal.NewRule("get").Groups("").Resources("pods").Names("pod3").RuleOrDie(),
-							rbacinternal.NewRule("get").Groups("apps").Resources("deployments").Names("dep3").RuleOrDie(),
+						Rules: []rbacv1.PolicyRule{
+							rbacv1helper.NewRule("get").Groups("").Resources("pods").Names("pod3").RuleOrDie(),
+							rbacv1helper.NewRule("get").Groups("apps").Resources("deployments").Names("dep3").RuleOrDie(),
 						},
 					},
 				},
-				RoleBindings: []*rbacinternal.RoleBinding{
-					&rbacinternal.RoleBinding{
+				RoleBindings: []*rbacv1.RoleBinding{
+					&rbacv1.RoleBinding{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns1"},
-						RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
-						Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+						RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
+						Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 					},
-					&rbacinternal.RoleBinding{
+					&rbacv1.RoleBinding{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns2"},
-						RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
-						Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+						RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
+						Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 					},
-					&rbacinternal.RoleBinding{
+					&rbacv1.RoleBinding{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns3"},
-						RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
-						Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+						RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
+						Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 					},
 				},
 			},
@@ -367,41 +368,41 @@ func TestProcessOptions(t *testing.T) {
 				authorizer.AttributesRecord{User: bob, ResourceRequest: true, Verb: "get", Namespace: "ns3", APIGroup: "apps", Resource: "deployments", Name: "dep3"},
 			},
 			expected: RBACObjects{
-				Roles: []*rbacinternal.Role{
-					&rbacinternal.Role{
+				Roles: []*rbacv1.Role{
+					&rbacv1.Role{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns1"},
-						Rules:      []rbacinternal.PolicyRule{rbacinternal.NewRule("get").Groups("").Resources("configmaps").Names("cm1").RuleOrDie()},
+						Rules:      []rbacv1.PolicyRule{rbacv1helper.NewRule("get").Groups("").Resources("configmaps").Names("cm1").RuleOrDie()},
 					},
-					&rbacinternal.Role{
+					&rbacv1.Role{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns2"},
-						Rules: []rbacinternal.PolicyRule{
-							rbacinternal.NewRule("get").Groups("").Resources("pods").RuleOrDie(),
-							rbacinternal.NewRule("get").Groups("apps").Resources("deployments").RuleOrDie(),
+						Rules: []rbacv1.PolicyRule{
+							rbacv1helper.NewRule("get").Groups("").Resources("pods").RuleOrDie(),
+							rbacv1helper.NewRule("get").Groups("apps").Resources("deployments").RuleOrDie(),
 						},
 					},
-					&rbacinternal.Role{
+					&rbacv1.Role{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns3"},
-						Rules: []rbacinternal.PolicyRule{
-							rbacinternal.NewRule("get").Groups("").Resources("pods").RuleOrDie(),
-							rbacinternal.NewRule("get").Groups("apps").Resources("deployments").RuleOrDie(),
+						Rules: []rbacv1.PolicyRule{
+							rbacv1helper.NewRule("get").Groups("").Resources("pods").RuleOrDie(),
+							rbacv1helper.NewRule("get").Groups("apps").Resources("deployments").RuleOrDie(),
 						},
 					},
 				},
-				RoleBindings: []*rbacinternal.RoleBinding{
-					&rbacinternal.RoleBinding{
+				RoleBindings: []*rbacv1.RoleBinding{
+					&rbacv1.RoleBinding{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns1"},
-						RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
-						Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+						RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
+						Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 					},
-					&rbacinternal.RoleBinding{
+					&rbacv1.RoleBinding{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns2"},
-						RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
-						Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+						RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
+						Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 					},
-					&rbacinternal.RoleBinding{
+					&rbacv1.RoleBinding{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns3"},
-						RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
-						Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+						RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
+						Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 					},
 				},
 			},
@@ -427,41 +428,41 @@ func TestProcessOptions(t *testing.T) {
 				authorizer.AttributesRecord{User: bob, ResourceRequest: true, Verb: "get", Namespace: "ns3", APIGroup: "apps", Resource: "deployments", Name: "dep3"},
 			},
 			expected: RBACObjects{
-				Roles: []*rbacinternal.Role{
-					&rbacinternal.Role{
+				Roles: []*rbacv1.Role{
+					&rbacv1.Role{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns1"},
-						Rules:      []rbacinternal.PolicyRule{rbacinternal.NewRule("get").Groups("").Resources("configmaps").Names("cm1").RuleOrDie()},
+						Rules:      []rbacv1.PolicyRule{rbacv1helper.NewRule("get").Groups("").Resources("configmaps").Names("cm1").RuleOrDie()},
 					},
-					&rbacinternal.Role{
+					&rbacv1.Role{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns2"},
-						Rules: []rbacinternal.PolicyRule{
-							rbacinternal.NewRule("get").Groups("").Resources("pods").Names("pod1", "pod2").RuleOrDie(),
-							rbacinternal.NewRule("get").Groups("apps").Resources("deployments").Names("dep1", "dep2").RuleOrDie(),
+						Rules: []rbacv1.PolicyRule{
+							rbacv1helper.NewRule("get").Groups("").Resources("pods").Names("pod1", "pod2").RuleOrDie(),
+							rbacv1helper.NewRule("get").Groups("apps").Resources("deployments").Names("dep1", "dep2").RuleOrDie(),
 						},
 					},
-					&rbacinternal.Role{
+					&rbacv1.Role{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns3"},
-						Rules: []rbacinternal.PolicyRule{
-							rbacinternal.NewRule("get").Groups("").Resources("pods").Names("pod1", "pod3").RuleOrDie(),
-							rbacinternal.NewRule("get").Groups("apps").Resources("deployments").Names("dep1", "dep3").RuleOrDie(),
+						Rules: []rbacv1.PolicyRule{
+							rbacv1helper.NewRule("get").Groups("").Resources("pods").Names("pod1", "pod3").RuleOrDie(),
+							rbacv1helper.NewRule("get").Groups("apps").Resources("deployments").Names("dep1", "dep3").RuleOrDie(),
 						},
 					},
 				},
-				RoleBindings: []*rbacinternal.RoleBinding{
-					&rbacinternal.RoleBinding{
+				RoleBindings: []*rbacv1.RoleBinding{
+					&rbacv1.RoleBinding{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns1"},
-						RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
-						Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+						RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
+						Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 					},
-					&rbacinternal.RoleBinding{
+					&rbacv1.RoleBinding{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns2"},
-						RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
-						Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+						RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
+						Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 					},
-					&rbacinternal.RoleBinding{
+					&rbacv1.RoleBinding{
 						ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac", Namespace: "ns3"},
-						RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
-						Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+						RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "Role", APIGroup: "rbac.authorization.k8s.io"},
+						Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 					},
 				},
 			},
@@ -491,17 +492,17 @@ func TestProcessOptions(t *testing.T) {
 				authorizer.AttributesRecord{User: bob, ResourceRequest: true, Verb: "list", APIGroup: "", Resource: "pods"},
 			},
 			expected: RBACObjects{
-				ClusterRoles: []*rbacinternal.ClusterRole{&rbacinternal.ClusterRole{
+				ClusterRoles: []*rbacv1.ClusterRole{&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					Rules: []rbacinternal.PolicyRule{
-						rbacinternal.NewRule("get", "list", "watch").Groups("").Resources("configmaps", "pods").RuleOrDie(),
-						rbacinternal.NewRule("get", "list", "watch").Groups("apps").Resources("deployments").RuleOrDie(),
+					Rules: []rbacv1.PolicyRule{
+						rbacv1helper.NewRule("get", "list", "watch").Groups("").Resources("configmaps", "pods").RuleOrDie(),
+						rbacv1helper.NewRule("get", "list", "watch").Groups("apps").Resources("deployments").RuleOrDie(),
 					},
 				}},
-				ClusterRoleBindings: []*rbacinternal.ClusterRoleBinding{&rbacinternal.ClusterRoleBinding{
+				ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{Name: "audit2rbac"},
-					RoleRef:    rbacinternal.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
-					Subjects:   []rbacinternal.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
+					RoleRef:    rbacv1.RoleRef{Name: "audit2rbac", Kind: "ClusterRole", APIGroup: "rbac.authorization.k8s.io"},
+					Subjects:   []rbacv1.Subject{{Name: "bob", Kind: "User", APIGroup: "rbac.authorization.k8s.io"}},
 				}},
 			},
 		},
@@ -533,31 +534,31 @@ func TestProcessOptions(t *testing.T) {
 func TestProcess(t *testing.T) {
 	bob := &user.DefaultInfo{Name: "bob", Groups: []string{"system:authenticated"}}
 	existing := RBACObjects{
-		ClusterRoles: []*rbacinternal.ClusterRole{
-			&rbacinternal.ClusterRole{
+		ClusterRoles: []*rbacv1.ClusterRole{
+			&rbacv1.ClusterRole{
 				ObjectMeta: metav1.ObjectMeta{Name: "cluster-admin"},
-				Rules: []rbacinternal.PolicyRule{
-					rbacinternal.NewRule("*").Groups("*").Resources("*").RuleOrDie(),
-					rbacinternal.NewRule("*").URLs("*").RuleOrDie(),
+				Rules: []rbacv1.PolicyRule{
+					rbacv1helper.NewRule("*").Groups("*").Resources("*").RuleOrDie(),
+					rbacv1helper.NewRule("*").URLs("*").RuleOrDie(),
 				},
 			},
-			&rbacinternal.ClusterRole{
+			&rbacv1.ClusterRole{
 				ObjectMeta: metav1.ObjectMeta{Name: "system:discovery"},
-				Rules: []rbacinternal.PolicyRule{
-					rbacinternal.NewRule("get").URLs("/healthz", "/version", "/swaggerapi", "/swaggerapi/*", "/api", "/api/*", "/apis", "/apis/*").RuleOrDie(),
+				Rules: []rbacv1.PolicyRule{
+					rbacv1helper.NewRule("get").URLs("/healthz", "/version", "/swaggerapi", "/swaggerapi/*", "/api", "/api/*", "/apis", "/apis/*").RuleOrDie(),
 				},
 			},
 		},
-		ClusterRoleBindings: []*rbacinternal.ClusterRoleBinding{
-			&rbacinternal.ClusterRoleBinding{
+		ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
+			&rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{Name: "cluster-admin"},
-				Subjects:   []rbacinternal.Subject{{Kind: rbacinternal.GroupKind, APIGroup: rbacinternal.GroupName, Name: "system:masters"}},
-				RoleRef:    rbacinternal.RoleRef{APIGroup: rbacinternal.GroupName, Kind: "ClusterRole", Name: "cluster-admin"},
+				Subjects:   []rbacv1.Subject{{Kind: rbacv1.GroupKind, APIGroup: rbacv1.GroupName, Name: "system:masters"}},
+				RoleRef:    rbacv1.RoleRef{APIGroup: rbacv1.GroupName, Kind: "ClusterRole", Name: "cluster-admin"},
 			},
-			&rbacinternal.ClusterRoleBinding{
+			&rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{Name: "system:discovery"},
-				Subjects:   []rbacinternal.Subject{{Kind: rbacinternal.GroupKind, APIGroup: rbacinternal.GroupName, Name: "system:authenticated"}},
-				RoleRef:    rbacinternal.RoleRef{APIGroup: rbacinternal.GroupName, Kind: "ClusterRole", Name: "system:discovery"},
+				Subjects:   []rbacv1.Subject{{Kind: rbacv1.GroupKind, APIGroup: rbacv1.GroupName, Name: "system:authenticated"}},
+				RoleRef:    rbacv1.RoleRef{APIGroup: rbacv1.GroupName, Kind: "ClusterRole", Name: "system:discovery"},
 			},
 		},
 	}

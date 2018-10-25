@@ -19,19 +19,20 @@ import (
 	"k8s.io/apiserver/pkg/authentication/user"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
 	"k8s.io/kubernetes/pkg/apis/rbac"
+	rbacv1helper "k8s.io/kubernetes/pkg/apis/rbac/v1"
 	"k8s.io/kubernetes/pkg/registry/rbac/validation"
 )
 
-func userToSubject(user user.Info) rbac.Subject {
+func userToSubject(user user.Info) rbacv1.Subject {
 	if ns, name, err := serviceaccount.SplitUsername(user.GetName()); err == nil {
-		return rbac.Subject{Name: name, Namespace: ns, Kind: "ServiceAccount"}
+		return rbacv1.Subject{Name: name, Namespace: ns, Kind: "ServiceAccount"}
 	}
-	return rbac.Subject{Name: user.GetName(), Kind: "User", APIGroup: rbac.GroupName}
+	return rbacv1.Subject{Name: user.GetName(), Kind: "User", APIGroup: rbac.GroupName}
 }
 
-func attributesToResourceRule(request authorizer.AttributesRecord, options GenerateOptions) rbac.PolicyRule {
+func attributesToResourceRule(request authorizer.AttributesRecord, options GenerateOptions) rbacv1.PolicyRule {
 	verbs := append([]string{request.Verb}, options.VerbExpansions[request.Verb]...)
-	rule := rbac.NewRule(verbs...).Groups(request.APIGroup).Resources(request.Resource).RuleOrDie()
+	rule := rbacv1helper.NewRule(verbs...).Groups(request.APIGroup).Resources(request.Resource).RuleOrDie()
 	if request.Subresource != "" {
 		rule.Resources[0] = rule.Resources[0] + "/" + request.Subresource
 	}
@@ -41,8 +42,8 @@ func attributesToResourceRule(request authorizer.AttributesRecord, options Gener
 	return rule
 }
 
-func compactRules(rules []rbac.PolicyRule) []rbac.PolicyRule {
-	breakdownRules := []rbac.PolicyRule{}
+func compactRules(rules []rbacv1.PolicyRule) []rbacv1.PolicyRule {
+	breakdownRules := []rbacv1.PolicyRule{}
 	for _, rule := range rules {
 		breakdownRules = append(breakdownRules, validation.BreakdownRule(rule)...)
 	}
@@ -55,7 +56,7 @@ func compactRules(rules []rbac.PolicyRule) []rbac.PolicyRule {
 		compactRules[i].Verbs = sets.NewString(compactRules[i].Verbs...).List()
 	}
 
-	accumulatingRules := []rbac.PolicyRule{}
+	accumulatingRules := []rbacv1.PolicyRule{}
 	for _, rule := range compactRules {
 		// Non-resource rules just accumulate
 		if len(rule.Resources) == 0 {
@@ -105,7 +106,7 @@ func compactRules(rules []rbac.PolicyRule) []rbac.PolicyRule {
 		if c := strings.Compare(strings.Join(accumulatingRules[i].APIGroups, ","), strings.Join(accumulatingRules[j].APIGroups, ",")); c != 0 {
 			return c < 0
 		}
-		return strings.Compare(accumulatingRules[i].CompactString(), accumulatingRules[j].CompactString()) < 0
+		return strings.Compare(rbacv1helper.CompactString(accumulatingRules[i]), rbacv1helper.CompactString(accumulatingRules[j])) < 0
 	})
 	return accumulatingRules
 }

@@ -16,6 +16,8 @@ import (
 
 	"github.com/liggitt/audit2rbac/pkg"
 	"github.com/spf13/cobra"
+
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -25,7 +27,7 @@ import (
 	"k8s.io/apiserver/pkg/authentication/serviceaccount"
 	"k8s.io/apiserver/pkg/authentication/user"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
-	rbacinternal "k8s.io/kubernetes/pkg/apis/rbac"
+	rbacv1helper "k8s.io/kubernetes/pkg/apis/rbac/v1"
 )
 
 func main() {
@@ -582,22 +584,22 @@ func eventToAttributes(event *audit.Event) authorizer.AttributesRecord {
 
 func getDiscoveryRoles() pkg.RBACObjects {
 	return pkg.RBACObjects{
-		ClusterRoles: []*rbacinternal.ClusterRole{
-			&rbacinternal.ClusterRole{
+		ClusterRoles: []*rbacv1.ClusterRole{
+			&rbacv1.ClusterRole{
 				ObjectMeta: metav1.ObjectMeta{Name: "system:discovery"},
-				Rules: []rbacinternal.PolicyRule{
-					rbacinternal.NewRule("get").URLs("/healthz", "/version", "/swagger*", "/openapi*", "/api*").RuleOrDie(),
+				Rules: []rbacv1.PolicyRule{
+					rbacv1helper.NewRule("get").URLs("/healthz", "/version", "/swagger*", "/openapi*", "/api*").RuleOrDie(),
 				},
 			},
 		},
-		ClusterRoleBindings: []*rbacinternal.ClusterRoleBinding{
-			&rbacinternal.ClusterRoleBinding{
+		ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
+			&rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{Name: "system:discovery"},
-				Subjects: []rbacinternal.Subject{
-					{Kind: rbacinternal.GroupKind, APIGroup: rbacinternal.GroupName, Name: "system:authenticated"},
-					{Kind: rbacinternal.GroupKind, APIGroup: rbacinternal.GroupName, Name: "system:unauthenticated"},
+				Subjects: []rbacv1.Subject{
+					{Kind: rbacv1.GroupKind, APIGroup: rbacv1.GroupName, Name: "system:authenticated"},
+					{Kind: rbacv1.GroupKind, APIGroup: rbacv1.GroupName, Name: "system:unauthenticated"},
 				},
-				RoleRef: rbacinternal.RoleRef{APIGroup: rbacinternal.GroupName, Kind: "ClusterRole", Name: "system:discovery"},
+				RoleRef: rbacv1.RoleRef{APIGroup: rbacv1.GroupName, Kind: "ClusterRole", Name: "system:discovery"},
 			},
 		},
 	}
