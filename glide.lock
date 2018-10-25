@@ -1,5 +1,5 @@
 hash: 40815fb728e552516a801511ca842e1adcf3c162030f9925f3688f69134c5016
-updated: 2018-10-24T23:06:29.930003-04:00
+updated: 2018-10-24T23:58:53.327275-04:00
 imports:
 - name: github.com/davecgh/go-spew
   version: 782f4967f2dc4564575ca782fe2d04090b5faca8
@@ -18,10 +18,6 @@ imports:
   version: b4deda0973fb4c70b50d226b1af49f3da59f5265
   subpackages:
   - proto
-  - ptypes
-  - ptypes/any
-  - ptypes/duration
-  - ptypes/timestamp
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/hashicorp/golang-lru
@@ -58,13 +54,10 @@ imports:
   version: 1c05540f6879653db88113bc4a2b70aec4bd491f
   subpackages:
   - context
-  - html
-  - html/atom
   - http2
   - http2/hpack
   - idna
   - lex/httplex
-  - websocket
 - name: golang.org/x/oauth2
   version: a6bd8cefa1811bd24b86f8902872e4e8225f74c4
   subpackages:
@@ -155,6 +148,7 @@ imports:
   version: 7f6c545c2e4ff0af96d8aac792ca499ea87a92e1
   subpackages:
   - pkg/apis/audit
+  - pkg/apis/audit/v1
   - pkg/apis/audit/v1alpha1
   - pkg/apis/audit/v1beta1
   - pkg/authentication/authenticator
