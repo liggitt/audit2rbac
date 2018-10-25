@@ -23,7 +23,7 @@ import:
   - pkg/authentication/user
   - pkg/authorization/authorizer
 - package: k8s.io/kubernetes
-  version: release-1.10
+  version: release-1.12
   subpackages:
   - pkg/apis/rbac
   - pkg/registry/rbac/validation
