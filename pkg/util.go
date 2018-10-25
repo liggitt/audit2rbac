@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/apis/audit"
+	auditv1 "k8s.io/apiserver/pkg/apis/audit/v1"
 	auditv1alpha1 "k8s.io/apiserver/pkg/apis/audit/v1alpha1"
 	auditv1beta1 "k8s.io/apiserver/pkg/apis/audit/v1beta1"
 	"k8s.io/apiserver/pkg/authentication/serviceaccount"
@@ -187,6 +188,9 @@ func init() {
 		panic(err)
 	}
 
+	if err := auditv1.AddToScheme(Scheme); err != nil {
+		panic(err)
+	}
 	if err := auditv1beta1.AddToScheme(Scheme); err != nil {
 		panic(err)
 	}

@@ -104,7 +104,7 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 
 type Audit2RBACOptions struct {
 	// AuditSources is a list of files, URLs or - for STDIN.
-	// Format must be JSON event.v1alpha1.audit.k8s.io or event.v1beta1.audit.k8s.io objects, one per line
+	// Format must be JSON event.v1alpha1.audit.k8s.io, event.v1beta1.audit.k8s.io,  event.v1.audit.k8s.io objects, one per line
 	AuditSources []string
 
 	// ExistingObjectFiles is a list of files or URLs.
