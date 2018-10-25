@@ -19,7 +19,6 @@ import (
 	"k8s.io/apiserver/pkg/authentication/serviceaccount"
 	"k8s.io/apiserver/pkg/authentication/user"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
-	"k8s.io/kubernetes/pkg/apis/rbac"
 	rbacv1helper "k8s.io/kubernetes/pkg/apis/rbac/v1"
 	"k8s.io/kubernetes/pkg/registry/rbac/validation"
 )
@@ -28,7 +27,7 @@ func userToSubject(user user.Info) rbacv1.Subject {
 	if ns, name, err := serviceaccount.SplitUsername(user.GetName()); err == nil {
 		return rbacv1.Subject{Name: name, Namespace: ns, Kind: "ServiceAccount"}
 	}
-	return rbacv1.Subject{Name: user.GetName(), Kind: "User", APIGroup: rbac.GroupName}
+	return rbacv1.Subject{Name: user.GetName(), Kind: "User", APIGroup: rbacv1.GroupName}
 }
 
 func attributesToResourceRule(request authorizer.AttributesRecord, options GenerateOptions) rbacv1.PolicyRule {
@@ -182,9 +181,6 @@ var (
 
 func init() {
 	if err := rbacv1.AddToScheme(Scheme); err != nil {
-		panic(err)
-	}
-	if err := rbac.AddToScheme(Scheme); err != nil {
 		panic(err)
 	}
 

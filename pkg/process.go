@@ -6,7 +6,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
-	"k8s.io/kubernetes/pkg/apis/rbac"
 	rbacv1helper "k8s.io/kubernetes/pkg/apis/rbac/v1"
 	"k8s.io/kubernetes/pkg/registry/rbac/validation"
 	rbacauthorizer "k8s.io/kubernetes/plugin/pkg/auth/authorizer/rbac"
@@ -168,7 +167,7 @@ func (g *Generator) ensureClusterRoleAndBinding(subject rbacv1.Subject) *rbacv1.
 	}
 	g.clusterRoleBinding = &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: g.Options.Name, Labels: g.Options.Labels, Annotations: g.Options.Annotations},
-		RoleRef:    rbacv1.RoleRef{APIGroup: rbac.GroupName, Kind: "ClusterRole", Name: g.clusterRole.Name},
+		RoleRef:    rbacv1.RoleRef{APIGroup: rbacv1.GroupName, Kind: "ClusterRole", Name: g.clusterRole.Name},
 		Subjects:   []rbacv1.Subject{subject},
 	}
 
@@ -191,7 +190,7 @@ func (g *Generator) ensureNamespacedRoleAndBinding(subject rbacv1.Subject, names
 	}
 	g.namespacedRoleBinding[namespace] = &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: g.Options.Name, Namespace: namespace, Labels: g.Options.Labels, Annotations: g.Options.Annotations},
-		RoleRef:    rbacv1.RoleRef{APIGroup: rbac.GroupName, Kind: "Role", Name: g.namespacedRole[namespace].Name},
+		RoleRef:    rbacv1.RoleRef{APIGroup: rbacv1.GroupName, Kind: "Role", Name: g.namespacedRole[namespace].Name},
 		Subjects:   []rbacv1.Subject{subject},
 	}
 
