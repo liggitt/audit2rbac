@@ -6,11 +6,11 @@ run:
 	go run ./cmd/audit2rbac/audit2rbac.go
 
 install-deps:
-	glide install -v
+	go mod vendor
 	build/update-vendor-notices.sh
 
 update-deps:
-	glide update -v
+	go mod vendor
 	build/update-vendor-notices.sh
 
 clean-deps:
@@ -45,7 +45,7 @@ fmt:
 	fi
 
 vet:
-	go tool vet -atomic -bool -copylocks -nilfunc -printf -shadow -rangeloops -unreachable -unsafeptr -unusedresult ./pkg
+	go vet -atomic -bool -copylocks -nilfunc -printf -rangeloops -unreachable -unsafeptr -unusedresult ./pkg
 
 # https://github.com/golang/lint
 # go get github.com/golang/lint/golint
@@ -61,7 +61,7 @@ lint:
 
 check_go_version:
 	@OUTPUT=`go version`; \
-	if [[ "$$OUTPUT" != *"go1.11."* ]]; then \
+	if [[ "$$OUTPUT" != *"go1.13."* ]]; then \
 		echo "Expected: go version go1.11.*"; \
 		echo "Found:    $$OUTPUT"; \
 		exit 1; \

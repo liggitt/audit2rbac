@@ -82,8 +82,7 @@ audit2rbac takes a [Kubernetes audit log](https://kubernetes.io/docs/tasks/debug
 ## Developer Instructions
 
 Requirements:
-* Go 1.11.x
-* Glide 0.13.1+
+* Go 1.13.x
 
 To build and install from source:
 ```sh

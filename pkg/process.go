@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"context"
 	"reflect"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -89,10 +90,10 @@ func (g *Generator) Generate() *RBACObjects {
 	sortRequests(g.requests)
 
 	for _, request := range g.requests {
-		if decision, _, _ := existingAuthorizer.Authorize(request); decision == authorizer.DecisionAllow {
+		if decision, _, _ := existingAuthorizer.Authorize(context.Background(), request); decision == authorizer.DecisionAllow {
 			continue
 		}
-		if decision, _, _ := generatedAuthorizer.Authorize(request); decision == authorizer.DecisionAllow {
+		if decision, _, _ := generatedAuthorizer.Authorize(context.Background(), request); decision == authorizer.DecisionAllow {
 			continue
 		}
 
