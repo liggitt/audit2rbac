@@ -17,8 +17,8 @@ import (
 	"github.com/liggitt/audit2rbac/pkg"
 	"github.com/spf13/cobra"
 
+	v1 "k8s.io/api/apps/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,6 +41,7 @@ func checkErr(w io.Writer, err error) {
 	}
 }
 
+// NewAudit2RBACCommand builds a new command with default options
 func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 	name := "audit2rbac:${user}"
 	annotations := []string{"audit2rbac.liggitt.net/version=${version}"}
@@ -54,6 +55,9 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 
 		Stdout: stdout,
 		Stderr: stderr,
+
+		OutputDir:    "",
+		OutputFormat: "yaml",
 	}
 
 	serviceAccount := ""
@@ -97,11 +101,15 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 	cmd.Flags().StringSliceVar(&annotations, "generate-annotations", annotations, "Annotations to add to generated objects")
 	cmd.Flags().StringSliceVar(&labels, "generate-labels", labels, "Labels to add to generated objects")
 
+	cmd.Flags().StringVar(&options.OutputDir, "output-directory", options.OutputDir, "The directory to output to. Outputs to stdout if left blank.")
+	cmd.Flags().StringVarP(&options.OutputFormat, "output-format", "o", options.OutputFormat, "The output format to use (yaml|json)")
+
 	cmd.Flags().BoolVar(&showVersion, "version", false, "Display version")
 
 	return cmd
 }
 
+// Audit2RBACOptions holds all the options for the utility
 type Audit2RBACOptions struct {
 	// AuditSources is a list of files, URLs or - for STDIN.
 	// Format must be JSON event.v1alpha1.audit.k8s.io, event.v1beta1.audit.k8s.io,  event.v1.audit.k8s.io objects, one per line
@@ -133,8 +141,14 @@ type Audit2RBACOptions struct {
 
 	Stdout io.Writer
 	Stderr io.Writer
+
+	//OutputDir is a directory to output the results
+	OutputDir string
+	//OutputFormat is the format to use. Either yaml or json
+	OutputFormat string
 }
 
+// Complete is a helper utility to validate and complete the options
 func (a *Audit2RBACOptions) Complete(serviceAccount string, args []string, name string, annotations, labels []string) error {
 	if len(serviceAccount) > 0 && len(a.User) > 0 {
 		return fmt.Errorf("cannot set both user and service account")
@@ -201,6 +215,7 @@ func (a *Audit2RBACOptions) Complete(serviceAccount string, args []string, name 
 	return nil
 }
 
+// Validate is a helper to validate that the correct input was specified
 func (a *Audit2RBACOptions) Validate() error {
 	if len(a.User) == 0 {
 		return fmt.Errorf("--user is required")
@@ -211,9 +226,13 @@ func (a *Audit2RBACOptions) Validate() error {
 	if len(a.GeneratedPath) == 0 {
 		return fmt.Errorf("--output is required")
 	}
+	if a.OutputFormat != "yaml" && a.OutputFormat != "json" {
+		return fmt.Errorf("--output-format must be one of (yaml|json)")
+	}
 	return nil
 }
 
+// Run is starting point for the utility
 func (a *Audit2RBACOptions) Run() error {
 	hasErrors := false
 
@@ -283,36 +302,42 @@ func (a *Audit2RBACOptions) Run() error {
 	opts.ExpandMultipleNamespacesToClusterScoped = a.ExpandMultipleNamespacesToClusterScoped
 	opts.ExpandMultipleNamesToUnnamed = a.ExpandMultipleNamesToUnnamed
 
-	generated := pkg.NewGenerator(getDiscoveryRoles(), attributes, opts).Generate()
-
 	fmt.Fprintln(a.Stderr, "Generating roles...")
+	generated := pkg.NewGenerator(getDiscoveryRoles(), attributes, opts).Generate()
 
 	firstSeparator := true
 	printSeparator := func() {
+
 		if firstSeparator {
 			firstSeparator = false
 			return
 		}
-		fmt.Fprintln(os.Stdout, "---")
+		if a.OutputFormat == "yaml" {
+			fmt.Fprintln(os.Stdout, "---")
+		}
+		if a.OutputFormat == "json" {
+			fmt.Fprintln(os.Stdout, "")
+		}
+
 	}
 	for _, obj := range generated.Roles {
 		printSeparator()
-		pkg.Output(os.Stdout, obj, "yaml")
+		pkg.Output(os.Stdout, obj, a.OutputFormat)
 	}
 	for _, obj := range generated.ClusterRoles {
 		printSeparator()
-		pkg.Output(os.Stdout, obj, "yaml")
+		pkg.Output(os.Stdout, obj, a.OutputFormat)
 	}
 	for _, obj := range generated.RoleBindings {
 		printSeparator()
-		pkg.Output(os.Stdout, obj, "yaml")
+		pkg.Output(os.Stdout, obj, a.OutputFormat)
 	}
 	for _, obj := range generated.ClusterRoleBindings {
 		printSeparator()
-		pkg.Output(os.Stdout, obj, "yaml")
+		pkg.Output(os.Stdout, obj, a.OutputFormat)
 	}
 
-	fmt.Fprintln(a.Stderr, "Complete!")
+	fmt.Fprintln(a.Stderr, "\nComplete!")
 
 	if hasErrors {
 		return fmt.Errorf("Errors occurred reading audit events")
@@ -381,9 +406,9 @@ func streamingDecoder(r io.ReadCloser) decoder {
 	b, _ := buffer.Peek(1)
 	if string(b) == "{" {
 		return json.NewDecoder(buffer)
-	} else {
-		return yaml.NewYAMLToJSONDecoder(buffer)
 	}
+	return yaml.NewYAMLToJSONDecoder(buffer)
+
 }
 
 func stream(sources []io.ReadCloser) <-chan *streamObject {
@@ -585,7 +610,7 @@ func eventToAttributes(event *audit.Event) authorizer.AttributesRecord {
 func getDiscoveryRoles() pkg.RBACObjects {
 	return pkg.RBACObjects{
 		ClusterRoles: []*rbacv1.ClusterRole{
-			&rbacv1.ClusterRole{
+			{
 				ObjectMeta: metav1.ObjectMeta{Name: "system:discovery"},
 				Rules: []rbacv1.PolicyRule{
 					rbacv1helper.NewRule("get").URLs("/healthz", "/version", "/swagger*", "/openapi*", "/api*").RuleOrDie(),
@@ -593,7 +618,7 @@ func getDiscoveryRoles() pkg.RBACObjects {
 			},
 		},
 		ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
-			&rbacv1.ClusterRoleBinding{
+			{
 				ObjectMeta: metav1.ObjectMeta{Name: "system:discovery"},
 				Subjects: []rbacv1.Subject{
 					{Kind: rbacv1.GroupKind, APIGroup: rbacv1.GroupName, Name: "system:authenticated"},
