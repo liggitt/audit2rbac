@@ -56,7 +56,6 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 		Stdout: stdout,
 		Stderr: stderr,
 
-		OutputDir:    "",
 		OutputFormat: "yaml",
 	}
 
@@ -101,7 +100,6 @@ func NewAudit2RBACCommand(stdout, stderr io.Writer) *cobra.Command {
 	cmd.Flags().StringSliceVar(&annotations, "generate-annotations", annotations, "Annotations to add to generated objects")
 	cmd.Flags().StringSliceVar(&labels, "generate-labels", labels, "Labels to add to generated objects")
 
-	cmd.Flags().StringVar(&options.OutputDir, "output-directory", options.OutputDir, "The directory to output to. Outputs to stdout if left blank.")
 	cmd.Flags().StringVarP(&options.OutputFormat, "output-format", "o", options.OutputFormat, "The output format to use (yaml|json)")
 
 	cmd.Flags().BoolVar(&showVersion, "version", false, "Display version")
@@ -142,8 +140,6 @@ type Audit2RBACOptions struct {
 	Stdout io.Writer
 	Stderr io.Writer
 
-	//OutputDir is a directory to output the results
-	OutputDir string
 	//OutputFormat is the format to use. Either yaml or json
 	OutputFormat string
 }
