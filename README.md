@@ -14,7 +14,7 @@ audit2rbac takes a [Kubernetes audit log](https://kubernetes.io/docs/tasks/debug
 ## User Instructions
 
 1. Obtain a Kubernetes audit log containing all the API requests you expect your user to perform:
-    * The log must be in JSON format. This requires running an API server with `--feature-gates=AdvancedAudit=true` and an `--audit-policy-file` defined. See [documentation](https://kubernetes.io/docs/tasks/debug-application-cluster/audit/#advanced-audit) for more details.
+    * The log must be in JSON format. This requires running an API server with an `--audit-policy-file` defined. See [documentation](https://kubernetes.io/docs/tasks/debug-application-cluster/audit/#advanced-audit) for more details.
     * `audit.k8s.io/v1`, `audit.k8s.io/v1beta1` and `audit.k8s.io/v1alpha1` events are supported.
     * The `Metadata` log level works best to minimize log size.
     * To exercise all API calls, it is sometimes necessary to grant broad access to a user or application to avoid short-circuiting code paths on failed API requests. This should be done cautiously, ideally in a development environment.
