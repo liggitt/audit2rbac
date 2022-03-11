@@ -87,7 +87,7 @@ for PLATFORM in $PLATFORMS; do
   rm -f "${BIN_DIR}/${BIN_FILENAME}"
   rm -f "${TAR_FILENAME}"
 
-  CMD="GOARM=${GOARM} GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${BIN_DIR}/${BIN_FILENAME} $($(dirname "${BASH_SOURCE}")/print-ldflags.sh) $@"
+  CMD="GOARM=${GOARM} GOOS=${GOOS} GOARCH=${GOARCH} go build -trimpath -o ${BIN_DIR}/${BIN_FILENAME} $($(dirname "${BASH_SOURCE}")/print-ldflags.sh) $@"
 
   echo "${CMD}"
   eval $CMD || FAILURES="${FAILURES} ${PLATFORM}"
