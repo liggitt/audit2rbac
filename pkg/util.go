@@ -19,6 +19,7 @@ import (
 	"k8s.io/apiserver/pkg/authentication/serviceaccount"
 	"k8s.io/apiserver/pkg/authentication/user"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
+	helpervalidation "k8s.io/component-helpers/auth/rbac/validation"
 	rbacv1helper "k8s.io/kubernetes/pkg/apis/rbac/v1"
 	"k8s.io/kubernetes/pkg/registry/rbac/validation"
 )
@@ -45,7 +46,7 @@ func attributesToResourceRule(request authorizer.AttributesRecord, options Gener
 func compactRules(rules []rbacv1.PolicyRule) []rbacv1.PolicyRule {
 	breakdownRules := []rbacv1.PolicyRule{}
 	for _, rule := range rules {
-		breakdownRules = append(breakdownRules, validation.BreakdownRule(rule)...)
+		breakdownRules = append(breakdownRules, helpervalidation.BreakdownRule(rule)...)
 	}
 	compactRules, err := validation.CompactRules(breakdownRules)
 	if err != nil {
