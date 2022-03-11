@@ -82,7 +82,7 @@ audit2rbac takes a [Kubernetes audit log](https://kubernetes.io/docs/tasks/debug
 ## Developer Instructions
 
 Requirements:
-* Go 1.13.x
+* Go 1.17+
 
 To build and install from source:
 ```sh
