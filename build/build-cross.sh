@@ -37,7 +37,7 @@
 # Though more platforms may be supported (freebsd/386), they have been removed
 # from the standard ports/downloads and therefore removed from this list.
 #
-PLATFORMS="darwin/amd64" # amd64 only as of go1.5
+PLATFORMS="darwin/amd64 darwin/arm64"
 PLATFORMS="$PLATFORMS windows/amd64 windows/386" # arm compilation not available for Windows
 PLATFORMS="$PLATFORMS linux/amd64 linux/386"
 PLATFORMS="$PLATFORMS linux/ppc64 linux/ppc64le"
