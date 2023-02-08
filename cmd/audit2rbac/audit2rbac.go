@@ -18,7 +18,6 @@ import (
 	"github.com/spf13/cobra"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -422,7 +421,7 @@ func stream(sources []io.ReadCloser) <-chan *streamObject {
 func flatten(in <-chan *streamObject) <-chan *streamObject {
 	out := make(chan *streamObject)
 
-	v1List := v1.SchemeGroupVersion.WithKind("List")
+	v1List := metav1.SchemeGroupVersion.WithKind("List")
 
 	go func() {
 		defer close(out)
@@ -577,6 +576,13 @@ func eventToAttributes(event *audit.Event) authorizer.AttributesRecord {
 		attrs.Subresource = event.ObjectRef.Subresource
 		attrs.APIGroup = event.ObjectRef.APIGroup
 		attrs.APIVersion = event.ObjectRef.APIVersion
+	}
+	if event.Verb == "create" {
+		// The name attribute is not available to authorization of create requests
+		// (see https://kubernetes.io/docs/reference/access-authn-authz/rbac/#referring-to-resources),
+		// but is populated in audit events for successful create requests.
+		// Clear this to match what the authorizer will actually be asked to authorize.
+		attrs.Name = ""
 	}
 
 	return attrs
